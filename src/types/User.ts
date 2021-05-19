@@ -22,12 +22,6 @@ export class User implements PrismaUser {
   @Field(() => String)
   username: string
 
-  @Field(() => String)
-  displayName: string
-
-  @Field(() => String, { nullable: true })
-  photo: string | null
-
   @Field(() => UserRole)
   role: UserRole
 

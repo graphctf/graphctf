@@ -24,6 +24,9 @@ export class Attempt implements PrismaAttempt {
   @Field(() => Boolean, { nullable: true })
   correct: boolean | null
 
+  @Field(() => Number, { nullable: true })
+  pointsEarned: number | null
+
   @Field(() => Boolean, { defaultValue: false })
   reviewRequired: boolean
 

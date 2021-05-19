@@ -24,9 +24,6 @@ export class Game implements PrismaGame {
 
   // Data
   @Field(() => String)
-  slug: string
-
-  @Field(() => String)
   name: string
 
   @Field(() => Date)

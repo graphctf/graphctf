@@ -20,7 +20,7 @@ export class ChallengeFilterInput {
   toQuery(): Prisma.ChallengeWhereInput {
     return {
       tags: this.tag ? { some: this.tag.toQuery() } : undefined,
-
+      // TODO(@tylermenezes)
     };
   }
 }

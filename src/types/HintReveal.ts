@@ -18,6 +18,10 @@ export class HintReveal implements PrismaHintReveal {
   @Field(() => Date)
   updatedAt: Date
 
+  // Data
+  @Field(() => Number, { nullable: true })
+  pointsCost?: number
+
   // Relations
   @Field(() => Game)
   game: Game

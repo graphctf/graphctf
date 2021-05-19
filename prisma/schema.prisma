@@ -31,7 +31,6 @@ model Game {
   updatedAt DateTime @default(now())
 
   // Data
-  slug String
   name String
 
   // |- Lifecycle
@@ -74,10 +73,8 @@ model User {
   updatedAt DateTime @default(now())
 
   // Data
-  username    String
-  displayName String
-  photo       String?
-  role        UserRole
+  username String
+  role     UserRole
 
   // Relations
   game        Game         @relation(fields: [gameId], references: [id])
@@ -86,6 +83,8 @@ model User {
   teamId      String
   attempts    Attempt[]
   hintReveals HintReveal[]
+
+  @@unique([username, gameId])
 }
 
 model Team {
@@ -105,6 +104,8 @@ model Team {
   users       User[]
   attempts    Attempt[]
   hintReveals HintReveal[]
+
+  @@unique([slug, gameId])
 }
 
 model Challenge {
@@ -140,6 +141,8 @@ model Challenge {
   hints               Hint[]
   attempts            Attempt[]
   hintReveals         HintReveal[]
+
+  @@unique([slug, gameId])
 }
 
 model Tag {
@@ -155,6 +158,8 @@ model Tag {
   game       Game        @relation(fields: [gameId], references: [id])
   gameId     String
   challenges Challenge[]
+
+  @@unique([slug, gameId])
 }
 
 model Solution {
@@ -202,6 +207,7 @@ model Attempt {
   // Data
   submission      String?
   correct         Boolean?
+  pointsEarned    Int?
   reviewRequired  Boolean  @default(false)
   reviewCompleted Boolean  @default(false)
 
@@ -221,6 +227,9 @@ model HintReveal {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+  // Data
+  pointsCost Int?
 
   // Relations
   game        Game      @relation(fields: [gameId], references: [id])
