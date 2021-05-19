@@ -1,0 +1,236 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  CAPTAIN
+}
+
+enum ChallengeScoringType {
+  STATIC
+  DECREASE_WITH_TIME
+  DECREASE_WITH_SOLVES
+}
+
+enum SolutionType {
+  TEXT
+  TEXT_SENSITIVE
+  REGEX
+}
+
+model Game {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  slug String
+  name String
+
+  // |- Lifecycle
+  visibleAt DateTime
+  startsAt  DateTime
+  endsAt    DateTime
+  hiddenAt  DateTime
+
+  // Relations
+  users      User[]
+  teams      Team[]
+  challenges Challenge[]
+  hints      Hint[]
+  attempts   Attempt[]
+  hintReveal HintReveal[]
+  messages   Message[]
+  tags       Tag[]
+  solutions  Solution[]
+}
+
+model Message {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  title   String
+  content String @db.Text
+
+  // Relations
+  game   Game   @relation(fields: [gameId], references: [id])
+  gameId String
+}
+
+model User {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  username    String
+  displayName String
+  photo       String?
+  role        UserRole
+
+  // Relations
+  game        Game         @relation(fields: [gameId], references: [id])
+  gameId      String
+  team        Team         @relation(fields: [teamId], references: [id])
+  teamId      String
+  attempts    Attempt[]
+  hintReveals HintReveal[]
+}
+
+model Team {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  slug   String
+  name   String
+  points Int    @default(0)
+
+  // Relations
+  game        Game         @relation(fields: [gameId], references: [id])
+  gameId      String
+  users       User[]
+  attempts    Attempt[]
+  hintReveals HintReveal[]
+}
+
+model Challenge {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  slug     String
+  title    String
+  text     String    @db.Text
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  // |- Scoring
+  allowsMultiUserSolves Boolean              @default(false)
+  evaluatedByOrganizer  Boolean              @default(false)
+  scoring               ChallengeScoringType @default(STATIC)
+  points                Int
+  pointsEnd             Int?
+  pointsEndAt           DateTime?
+  pointsEndSolveCount   Int?
+
+  // Relations
+  game                Game         @relation(fields: [gameId], references: [id])
+  gameId              String
+  requiresChallenge   Challenge?   @relation("requiresChallengeRelation", fields: [requiresChallengeId], references: [id])
+  requiresChallengeId String?
+  requiredBy          Challenge[]  @relation("requiresChallengeRelation")
+  tags                Tag[]
+  solutions           Solution[]
+  hints               Hint[]
+  attempts            Attempt[]
+  hintReveals         HintReveal[]
+}
+
+model Tag {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  slug String
+
+  // Relations
+  game       Game        @relation(fields: [gameId], references: [id])
+  gameId     String
+  challenges Challenge[]
+}
+
+model Solution {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  text String
+  type SolutionType
+
+  // Relations
+  game        Game      @relation(fields: [gameId], references: [id])
+  gameId      String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  challengeId String
+}
+
+model Hint {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  text        String    @db.Text
+  availableAt DateTime?
+  penalty     Int?
+
+  // Relations
+  game        Game         @relation(fields: [gameId], references: [id])
+  gameId      String
+  challenge   Challenge    @relation(fields: [challengeId], references: [id])
+  challengeId String
+  hintReveals HintReveal[]
+}
+
+model Attempt {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Data
+  submission      String?
+  correct         Boolean?
+  reviewRequired  Boolean  @default(false)
+  reviewCompleted Boolean  @default(false)
+
+  // Relations
+  game        Game      @relation(fields: [gameId], references: [id])
+  gameId      String
+  team        Team      @relation(fields: [teamId], references: [id])
+  teamId      String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  challengeId String
+}
+
+model HintReveal {
+  // Metadata
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Relations
+  game        Game      @relation(fields: [gameId], references: [id])
+  gameId      String
+  team        Team      @relation(fields: [teamId], references: [id])
+  teamId      String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  challengeId String
+  hint        Hint      @relation(fields: [hintId], references: [id])
+  hintId      String
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@graphctf/graphctf",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "author": "Tyler Menezes <x@tyler.vc>",
+  "license": "Artistic-2.0",
+  "scripts": {
+    "start": "node dist",
+    "clean": "rm -rf dist",
+    "build": "npm -s run clean && npm -s run generate && npx tsc",
+    "generate": "prisma generate",
+    "dev": "ts-node-dev --no-notify --respawn --transpile-only src",
+    "debug": "ts-node-dev --no-notify --respawn src"
+  },
+  "dependencies": {
+    "@prisma/client": "^2.23.0",
+    "apollo-server": "^2.24.1",
+    "apollo-server-express": "^2.24.1",
+    "class-validator": "^0.13.1",
+    "dotenv": "^9.0.2",
+    "express": "^4.17.1",
+    "graphql": "^15.5.0",
+    "reflect-metadata": "^0.1.13",
+    "type-graphql": "^1.1.1",
+    "typedi": "^0.10.0"
+  },
+  "devDependencies": {
+    "@codeday/eslint-typescript-config": "^2.1.5",
+    "@types/node": "^15.3.0",
+    "eslint": "^7.26.0",
+    "prisma": "^2.23.0",
+    "ts-node": "^9.1.1",
+    "ts-node-dev": "^1.1.6",
+    "typescript": "^4.2.4"
+  }
+}
