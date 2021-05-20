@@ -3,6 +3,7 @@ import { buildSchema } from 'type-graphql';
 import { GraphQLSchema } from 'graphql';
 import { Container } from 'typedi';
 import resolvers from './resolvers';
+import { authChecker } from './context';
 
 export async function createSchema() : Promise<GraphQLSchema> {
   return buildSchema({
@@ -13,5 +14,6 @@ export async function createSchema() : Promise<GraphQLSchema> {
       '../generated/generated-schema.graphql',
     ),
     validate: false,
+    authChecker,
   });
 }

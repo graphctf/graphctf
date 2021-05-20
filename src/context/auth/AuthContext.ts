@@ -4,7 +4,9 @@ import { UserRole } from '../../enums';
 import config from '../../config';
 import { makeCache } from '../../redis';
 import { JwtToken } from './JwtToken';
+import { User } from '../../types';
 
+const prisma = new PrismaClient();
 const userTokenCache = makeCache('userToken');
 const userTeamCache = makeCache('userTeam');
 
@@ -34,39 +36,48 @@ export class AuthContext {
     return Boolean(this.token && this.token.sub && this.token.gam);
   }
 
+  public get isAdmin(): boolean {
+    return this.token?.adm || false;
+  }
+
+  public get username(): string | null {
+    return this.token?.sub || null;
+  }
+
+  public get teamSlug(): string | null {
+    return this.token?.tea || null;
+  }
+
+  public get gameId(): string | null {
+    return this.token?.gam || null;
+  }
+
+  public get role(): UserRole | null {
+    return this.token?.rol || null;
+  }
+
+  private user?: User | null | undefined;
+
+  async getUser(): Promise<User> {
+    if (!this.isUser) throw new Error(`This resource requires authentication.`);
+    if (!this.user) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.user = await User.fromUsernameAndGameId(this.token!.sub!, this.token!.gam!);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.user!;
+  }
+
   private async updateDb(): Promise<void> {
     if (!this.isUser) return;
     if (!this.token || !this.token.sub || !this.token.tea || !this.token.gam) return;
     if (!this.tokenString || await userTokenCache.get(this.token.sub) === this.tokenString) return; // no change
     await userTokenCache.set(this.token.sub, this.tokenString);
 
-    const prisma = new PrismaClient();
-
-    // Check if the team is changing
-    let prevUserTeam = await userTeamCache.get(this.token.sub);
-    if (!prevUserTeam) {
-      prevUserTeam = (await prisma.user.findUnique({
-        select: { teamId: true },
-        where: { username_gameId: { username: this.token.sub, gameId: this.token.gam } },
-      }))?.teamId || null;
-    }
-
-    // TODO(@tylermenezes): Move some of this logic into the User class.
-    if (prevUserTeam && prevUserTeam !== this.token.tea) {
-      // The user's team has changed, so we'll delete everything related to their old team.
-      const where = { user: { username: this.token.sub }, team: { id: prevUserTeam } };
-      // eslint-disable-next-line no-underscore-dangle
-      const previousPoints = (await prisma.attempt.aggregate({ _sum: { pointsEarned: true }, where }))
-        ._sum.pointsEarned || 0;
-      // eslint-disable-next-line no-underscore-dangle
-      const previousPenalties = (await prisma.hintReveal.aggregate({ _sum: { pointsCost: true }, where }))
-        ._sum.pointsCost || 0;
-      await prisma.team.update({
-        where: { id: prevUserTeam },
-        data: { points: { increment: previousPenalties - previousPoints } },
-      });
-      await prisma.attempt.deleteMany({ where });
-      await prisma.hintReveal.deleteMany({ where });
+    // Check if the user's team is changing
+    const user = await User.fromUsernameAndGameId(this.token.sub, this.token.gam, {});
+    if (user?.teamId !== this.token.tea) {
+      await user?.changeTeam(this.token.tea);
     }
 
     const team = {
@@ -79,16 +90,16 @@ export class AuthContext {
         },
       },
     };
-    await prisma.user.upsert({
+    this.user = new User(await prisma.user.upsert({
       where: { username_gameId: { username: this.token.sub, gameId: this.token.gam } },
-      update: { team },
+      update: { role: this.token.rol },
       create: {
         username: this.token.sub,
         game: { connect: { id: this.token.gam } },
         role: this.token.rol || UserRole.USER,
         team,
       },
-    });
+    }));
     await userTeamCache.set(this.token.sub, this.token.tea);
   }
 }

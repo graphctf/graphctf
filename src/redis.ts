@@ -4,6 +4,7 @@ import config from './config';
 
 const client = redis.createClient(config.redis.url);
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function makeCache(prefix: string, defaultLifetime?: number | undefined) {
   const prefixKey = (key: string) => `${config.redis.prefix}.${prefix}.${key}`;
   return {

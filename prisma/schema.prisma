@@ -40,15 +40,15 @@ model Game {
   hiddenAt  DateTime
 
   // Relations
-  users      User[]
-  teams      Team[]
-  challenges Challenge[]
-  hints      Hint[]
-  attempts   Attempt[]
-  hintReveal HintReveal[]
-  messages   Message[]
-  tags       Tag[]
-  solutions  Solution[]
+  users       User[]
+  teams       Team[]
+  challenges  Challenge[]
+  hints       Hint[]
+  attempts    Attempt[]
+  hintReveals HintReveal[]
+  messages    Message[]
+  tags        Tag[]
+  solutions   Solution[]
 }
 
 model Message {

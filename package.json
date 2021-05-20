@@ -27,7 +27,8 @@
     "redis": "^3.1.2",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "^1.1.1",
-    "typedi": "^0.10.0"
+    "typedi": "^0.10.0",
+    "ws": "^7.4.5"
   },
   "devDependencies": {
     "@codeday/eslint-typescript-config": "^2.1.5",

@@ -6,13 +6,14 @@ import ws from 'ws';
 import { execute, subscribe } from 'graphql';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createSchema } from './schema';
-import { createContext } from './context';
+import { createContext as context } from './context';
 import config from './config';
 
 export default async function server(): Promise<void> {
+  const schema = await createSchema();
   const apollo = new ApolloServer({
-    schema: await createSchema(),
-    context: createContext,
+    schema,
+    context,
     playground: config.debug,
     introspection: true,
   });
@@ -21,27 +22,18 @@ export default async function server(): Promise<void> {
   app.use(graphqlUploadExpress({ maxFileSize: 100 * 1024 * 1024, maxFiles: 3 }));
   apollo.applyMiddleware({ app });
 
-  const server = http.createServer(app);
-
+  const httpServer = http.createServer(app);
   const wsServer = new ws.Server({
-    server,
+    server: httpServer,
     path: '/graphql',
   });
 
-  server.listen(config.port, () => {
-    useServer(
-      {
-        schema,
-        execute,
-        subscribe,
-        context: createContext,
-      },
-      wsServer,
-    );
+  httpServer.listen(config.port, () => {
+    useServer({
+      schema, execute, subscribe, context,
+    }, wsServer);
+
+    // eslint-disable-next-line no-console
     console.log(`Listening on http://0.0.0.0:${config.port}`);
   });
-}
-
-  // eslint-disable-next-line no-console
-  console.log(`Server ready at ${url}`);
 }

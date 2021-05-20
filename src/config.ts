@@ -1,4 +1,4 @@
-/* eslint-disable node/no-process-env */
+/* eslint-disable @typescript-eslint/no-non-null-assertion, node/no-process-env */
 import { config as loadEnv } from 'dotenv';
 
 loadEnv();
@@ -8,6 +8,7 @@ loadEnv();
 
 const config = {
   debug: process.env.NODE_ENV !== 'production',
+  port: process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 5000,
   redis: {
     url: process.env.REDIS_URL!,
     prefix: process.env.REDIS_PREFIX!,

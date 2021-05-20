@@ -3,10 +3,10 @@ import { registerEnumType } from 'type-graphql';
 
 export { ChallengeScoringType, SolutionType, UserRole };
 
-export { ChallengeVisibilityStatus } from './ChallengeVisibilityStatus';
-export { ChallengeRequirementStatus } from './ChallengeRequirementStatus';
-export { ChallengeAttemptStatus } from './ChallengeAttemptStatus';
+export * from './ChallengeVisibilityStatus';
+export * from './ChallengeRequirementStatus';
+export * from './ChallengeAttemptStatus';
 
 registerEnumType(ChallengeScoringType, { name: 'ChallengeScoringType' });
-registerEnumType(SolutionType, { name: 'ChallengeScoringType' });
-registerEnumType(UserRole, { name: 'ChallengeScoringType' });
+registerEnumType(SolutionType, { name: 'ChallengeSolutionType' });
+registerEnumType(UserRole, { name: 'UserRole' });

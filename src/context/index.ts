@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { ExpressContext } from 'apollo-server-express/dist/ApolloServer';
-import { AuthContext } from './auth/AuthContext';
+import { AuthContext } from './auth';
+
+export * from './auth';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +12,8 @@ export interface Context {
 }
 
 export async function createContext({ req, connection }: ExpressContext): Promise<Context> {
-  const token = connection ? connection.context.authorization : req.headers.authorization;
+  const tokenHeader = ((connection ? connection.context.authorization : req.headers.authorization) || '').split(/\s+/);
+  const token = tokenHeader[0] === 'Bearer' ? tokenHeader[1].trim() : undefined;
 
   return {
     prisma,

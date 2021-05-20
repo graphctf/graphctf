@@ -1,6 +1,7 @@
 import { Challenge as PrismaChallenge } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
 import { ChallengeScoringType } from '../enums';
+import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Tag } from './Tag';
 import { Solution } from './Solution';
@@ -9,7 +10,7 @@ import { Attempt } from './Attempt';
 import { HintReveal } from './HintReveal';
 
 @ObjectType()
-export class Challenge implements PrismaChallenge {
+export class Challenge extends FromPrisma<PrismaChallenge> implements PrismaChallenge {
   // Metadata
   @Field(() => String)
   id: string
@@ -58,31 +59,39 @@ export class Challenge implements PrismaChallenge {
   pointsEndSolveCount: number
 
   // Relations
+  @PrismaRelation(() => Game)
   @Field(() => Game)
   game: Game
 
   gameId: string
 
+  @PrismaRelation(() => Challenge)
   @Field(() => Challenge, { nullable: true })
   requiresChallenge: Challenge | null
 
   requiresChallengeId: string | null
 
+  @PrismaRelation(() => [Challenge])
   @Field(() => [Challenge])
   requiredBy: Challenge[]
 
+  @PrismaRelation(() => [Tag])
   @Field(() => [Tag])
   tags: Tag[]
 
+  @PrismaRelation(() => [Solution])
   @Field(() => [Solution])
   solutions: Solution[]
 
+  @PrismaRelation(() => [Hint])
   @Field(() => [Hint])
   hints: Hint[]
 
+  @PrismaRelation(() => [HintReveal])
   @Field(() => [HintReveal])
   hintReveals: HintReveal[]
 
+  @PrismaRelation(() => [Attempt])
   @Field(() => [Attempt])
   attempts: Attempt[]
 }

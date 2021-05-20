@@ -1,9 +1,10 @@
 import { Message as PrismaMessage } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
+import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 
 @ObjectType()
-export class Message implements PrismaMessage {
+export class Message extends FromPrisma<PrismaMessage> implements PrismaMessage {
   // Metadata
   @Field(() => String)
   id: string
@@ -22,6 +23,7 @@ export class Message implements PrismaMessage {
   content: string
 
   // Relations
+  @PrismaRelation(() => Game)
   @Field(() => Game)
   game: Game
 
