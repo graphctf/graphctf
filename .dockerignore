@@ -1,8 +1,18 @@
+# Config
 .env
 .env.*
-prisma/.env
-.next/
-generated/
+
+# Build
+dist
+
+# ESLint
 .eslint*
+
+# Prisma
+generated
+
+# NPM
+node_modules
+
+# Read me
 README.md
-node_modules/

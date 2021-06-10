@@ -1,5 +1,12 @@
-generated/
-node_modules/
+# Config
 .env
 .env.*
-dist/
+
+# Build
+dist
+
+# Prisma
+generated
+
+# NPM
+node_modules

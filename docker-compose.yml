@@ -1,0 +1,40 @@
+# Production ready Docker compose
+
+version: '3.9'
+
+services:
+  # MySQL database for persistant storage
+  mysql:
+    container_name: MySQL
+    image: mysql:latest
+    ports:
+      - 5000:5000/tcp
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  # Redis database used for session storage
+  redis:
+    container_name: Redis
+    image: redis:alpine
+    network_mode: 'service:mysql'
+
+  # GraphCTF itself
+  graphctf:
+    container_name: GraphCTF
+    build: .
+    image: graphctf/graphctf:latest
+    depends_on:
+      - mysql
+      - redis
+    network_mode: 'service:mysql'
+    environment:
+      - DATABASE_URL=mysql://root:${MYSQL_PASSWORD}@127.0.0.1:3306
+      - REDIS_URL=redis://127.0.0.1:6379
+      - REDIS_PREFIX=session
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_AUDIENCE=graphctf/graphctf
+
+volumes:
+  mysql-data:

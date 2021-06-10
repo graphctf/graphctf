@@ -1,13 +1,36 @@
-FROM node:14-alpine
+# Build container
+FROM node:current-alpine as build
 
-ENV NODE_ENV=production
-RUN mkdir /app
-COPY yarn.lock /app
-COPY package.json /app
-WORKDIR /app
+# Working directory
+WORKDIR /src
 
-RUN NODE_ENV=development yarn install
-COPY . /app
+# Copy source code
+COPY . .
+
+# Install dependencies
+ENV NODE_ENV=development
+RUN yarn install --legacy-peer-deps
+
+# Build GraphCTF
 RUN yarn run build
-COPY ./docker-entrypoint.sh /docker-entrypoint.sh
-CMD /docker-entrypoint.sh
+
+# Server container
+FROM node:current-alpine
+
+# Create a system user
+RUN addgroup -S nodejs && adduser -S graphctf -G nodejs
+
+# Working directory
+WORKDIR /app
+RUN chown graphctf:nodejs /app
+
+# Copy build
+COPY --chown=nodejs:graphctf --from=build /src/dist dist
+COPY --chown=nodejs:graphctf --from=build /src/node_modules node_modules
+
+# Switch to the graphctf user
+USER graphctf
+
+# Start GraphCTF directly
+ENV NODE_ENV=production
+CMD ["node", "dist/index.js"]
