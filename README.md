@@ -20,6 +20,13 @@ docker build -t graphctf/graphctf:latest .
 docker run -d -p 5000:5000/tcp --env DATABASE_URL= --env REDIS_URL= --env REDIS_PREFIX=session --env AUTH_SECRET= --env AUTH_AUDIENCE=graphctf/graphctf --name graphctf graphctf/graphctf:latest
 ```
 
+## Development
+1. Configure [Docker Compose variables](#docker-compose-config)
+2. Run the stack:
+```bash
+docker-compose up -d
+```
+
 ## Config
 All configuration is done through environment variables.
 
