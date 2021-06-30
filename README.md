@@ -38,13 +38,18 @@ Name | Default | Description
 `PORT` | `5000` | HTTP server port
 `DATABASE_URL` | N/A | MySQL connection string
 `REDIS_URL` | N/A | Redis connection string
-`REDIS_PREFIX` | `session` | Redis global prefix
-`AUTH_SECRET` | N/A | JWT secret (Should match frontend)
-`AUTH_AUDIENCE` | `graphctf/graphctf` | JWT audience (Should match frontend)
+`REDIS_PREFIX` | N/A | Redis global prefix
+`EXCHANGE_SECRET` | N/A | Exchange token secret (Should **match** frontend)
+`EXCHANGE_AUDIENCE` | N/A | Exchange token audience (Should **match** frontend)
+`SESSION_SECRET` | N/A | Session token secret (Should be **different** than frontend)
+`SESSION_AUDIENCE` | N/A | Session token audience (Should be **different** than frontend)
 
 ### Docker Compose config
-*Note: the below options only apply to [`docker-compose.yml`](./docker-compose.yml).*
+*Note: the below options only apply to [`docker-compose.yml`](./docker-compose.yml), see the previous section if you're not using Docker compose.*
 Name | Description
 --- | ---
 `MYSQL_PASSWORD` | MySQL root password
-`AUTH_SECRET` | JWT secret (Should match frontend)
+`EXCHANGE_SECRET` | Exchange token secret (Should **match** frontend)
+`EXCHANGE_AUDIENCE` | Exchange token audience (Should **match** frontend)
+`SESSION_SECRET` | Session token secret (Should be **different** than frontend)
+`SESSION_AUDIENCE` | Session token audience (Should be **different** than frontend)

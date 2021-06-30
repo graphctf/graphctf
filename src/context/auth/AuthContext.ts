@@ -19,7 +19,7 @@ export class AuthContext {
     if (!token) return;
     this.tokenString = token;
 
-    this.token = <JwtToken> verify(token, config.auth.secret, { audience: config.auth.audience });
+    this.token = <JwtToken> verify(token, config.session.secret, { audience: config.session.audience });
     if (this.token?.sub) {
       if (!(this.token.tea || this.token.gam)) {
         throw Error(`User token requires game and team information.`);

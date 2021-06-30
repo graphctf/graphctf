@@ -31,6 +31,9 @@ COPY --chown=nodejs:graphctf --from=build /src/node_modules node_modules
 # Switch to the graphctf user
 USER graphctf
 
+# Run in production by default
+ARG DOCKER_ENV=production
+ENV NODE_ENV=$DOCKER_ENV
+
 # Start GraphCTF directly
-ENV NODE_ENV=production
 CMD ["node", "dist/index.js"]

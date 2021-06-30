@@ -3,7 +3,7 @@ import { config as loadEnv } from 'dotenv';
 
 loadEnv();
 
-['DATABASE_URL', 'REDIS_URL', 'REDIS_PREFIX', 'AUTH_SECRET', 'AUTH_AUDIENCE']
+['DATABASE_URL', 'REDIS_URL', 'REDIS_PREFIX', 'EXCHANGE_SECRET', 'EXCHANGE_AUDIENCE', 'SESSION_SECRET', 'SESSION_AUDIENCE']
   .forEach((req) => { if (!process.env[req]) throw Error(`The ${req} environment variable is required.`); });
 
 const config = {
@@ -13,9 +13,16 @@ const config = {
     url: process.env.REDIS_URL!,
     prefix: process.env.REDIS_PREFIX!,
   },
-  auth: {
-    secret: process.env.AUTH_SECRET!,
-    audience: process.env.AUTH_AUDIENCE!,
+  game: {
+    id: process.env.GAME_ID!,
+  },
+  exchange: {
+    secret: process.env.EXCHANGE_SECRET!,
+    audience: process.env.EXCHANGE_AUDIENCE!,
+  },
+  session: {
+    secret: process.env.SESSION_SECRET!,
+    audience: process.env.SESSION_AUDIENCE!,
   },
 };
 
