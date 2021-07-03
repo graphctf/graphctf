@@ -25,8 +25,8 @@ WORKDIR /app
 RUN chown graphctf:nodejs /app
 
 # Copy build
-COPY --chown=nodejs:graphctf --from=build /src/dist dist
-COPY --chown=nodejs:graphctf --from=build /src/node_modules node_modules
+COPY --chown=graphctf:nodejs --from=build /src/dist dist
+COPY --chown=graphctf:nodejs --from=build /src/node_modules node_modules
 
 # Switch to the graphctf user
 USER graphctf
