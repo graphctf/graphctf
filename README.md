@@ -22,7 +22,11 @@ docker run -d -p 5000:5000/tcp --env DATABASE_URL= --env REDIS_URL= --env REDIS_
 
 ## Development
 1. Configure [Docker Compose variables](#docker-compose-config)
-2. Run the stack:
+2. Build the stack:
+```bash
+docker-compose build --build-arg DOCKER_ENV=development
+```
+3. Run the stack:
 ```bash
 docker-compose up -d
 ```
