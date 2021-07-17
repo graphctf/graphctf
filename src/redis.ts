@@ -1,12 +1,13 @@
 import { promisify } from 'util';
-import redis from 'redis';
-import config from './config';
-
-const client = redis.createClient(config.redis.url);
+import { RedisClient } from 'redis';
+import { Container } from 'typedi';
+import config from '~/config';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function makeCache(prefix: string, defaultLifetime?: number | undefined) {
-  const prefixKey = (key: string) => `${config.redis.prefix}.${prefix}.${key}`;
+  const client = Container.get(RedisClient);
+
+  const prefixKey = (key: string) => `${prefix}.${key}`;
   return {
     get: async (key: string) => promisify(client.get).bind(client)(prefixKey(key)),
     has: async (key: string) => (

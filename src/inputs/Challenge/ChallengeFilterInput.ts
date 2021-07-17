@@ -9,7 +9,7 @@ import {
   ChallengeRequirementStatusToWhere,
 } from '~/enums';
 import { Context } from '~/context';
-import { TagFilterInput } from '~/inputs/Tag';
+import { TagFilterInput } from '../Tag';
 
 @InputType()
 export class ChallengeFilterInput {

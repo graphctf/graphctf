@@ -1,10 +1,10 @@
 /* eslint-disable import/first */
+import { install } from 'source-map-support';
+install();
+
 import './aliases';
+import './di';
 import 'reflect-metadata';
-import { registerDi } from './di';
-
-registerDi();
-
 import server from './server';
 
 server();
