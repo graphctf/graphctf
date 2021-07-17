@@ -18,6 +18,7 @@ const config = {
   port: process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 5000,
   redis: {
     url: process.env.REDIS_URL!,
+    writeUrl: process.env.REDIS_URL_WRITE,
     prefix: process.env.REDIS_PREFIX!,
   },
   game: {

@@ -1,11 +1,12 @@
 import {
-  Resolver, Authorized, Query, Mutation, Arg, Ctx,
+  Resolver, Authorized, Query, Mutation, Arg, Ctx, PubSub, Publisher
 } from 'type-graphql';
 import { PrismaClient } from '@prisma/client';
 import { Inject, Service } from 'typedi';
 import { Challenge, Game } from '~/types';
 import { CreateGameInput, EditGameInput, FindOneIdInput } from '~/inputs';
 import { Context, AuthRequirement, MemberOfGame } from '~/context';
+import { GameTopics, GameTopicPayload } from '~/subscriptions';
 
 @Service()
 @Resolver(Game)
@@ -46,25 +47,31 @@ export class GameResolver {
   @Authorized(AuthRequirement.ADMIN)
   @Mutation(() => Game)
   async createGame(
+    @PubSub(GameTopics.GAME) publish: Publisher<GameTopicPayload>,
     @Arg('data', () => CreateGameInput) data: CreateGameInput,
   ): Promise<Game> {
-    return new Game(await this.prisma.game.create({
+    const game = await this.prisma.game.create({
       data,
-    }));
+    });
+    publish({ game: { id: game.id } });
+    return new Game(game);
   }
 
   @Authorized(AuthRequirement.ADMIN)
   @Mutation(() => Game)
   async editGame(
     @Ctx() context: Context,
+    @PubSub(GameTopics.GAME) publish: Publisher<GameTopicPayload>,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
     @Arg('data', () => EditGameInput) data: EditGameInput,
   ): Promise<Game> {
-    return new Game(await this.prisma.game.update({
+    const game = await this.prisma.game.update({
       where,
       data,
       include: Game.getDefaultInclude(context),
-    }));
+    });
+    publish({ game: { id: game.id } });
+    return new Game(game);
   }
 
   @Authorized(AuthRequirement.ADMIN)

@@ -7,6 +7,7 @@ export * from './Game';
 export * from './Hint';
 export * from './HintReveal';
 export * from './Message';
+export * from './ScoreboardEntry';
 export * from './Solution';
 export * from './Tag';
 export * from './Team';

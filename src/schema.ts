@@ -1,6 +1,7 @@
 import path from 'path';
 import { buildSchema, NonEmptyArray } from 'type-graphql';
 import { GraphQLSchema } from 'graphql';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Container } from 'typedi';
 import * as resolvers from '~/resolvers';
 import { authChecker } from '~/context';
@@ -13,7 +14,8 @@ export async function createSchema() : Promise<GraphQLSchema> {
       __dirname,
       '../generated/generated-schema.graphql',
     ),
-    validate: false,
+    validate: true,
     authChecker,
+    pubSub: Container.get(RedisPubSub),
   });
 }

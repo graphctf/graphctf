@@ -1,10 +1,12 @@
 import { Container } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import Redis from 'ioredis';
-import config from '~/config';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { RedisRead, RedisWrite } from './redis';
 
 Container.set(PrismaClient, new PrismaClient());
-Container.set('redis', new Redis(config.redis.url, {
-  keyPrefix: config.redis.prefix,
-  retryStrategy: () => (Math.random() * 5000) + 1000,
-}));
+Container.set(RedisRead, new RedisRead());
+Container.set(RedisWrite, new RedisWrite());
+Container.set(RedisPubSub, new RedisPubSub({
+  publisher: Container.get(RedisWrite),
+  subscriber: Container.get(RedisRead),
+}))
