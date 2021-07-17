@@ -5,9 +5,9 @@ import { graphqlUploadExpress } from 'graphql-upload';
 import ws from 'ws';
 import { execute, subscribe } from 'graphql';
 import { useServer } from 'graphql-ws/lib/use/ws';
-import { createSchema } from './schema';
-import { createContext as context } from './context';
-import config from './config';
+import { createSchema } from '~/schema';
+import { createContext as context } from '~/context';
+import config from '~/config';
 
 export default async function server(): Promise<void> {
   const schema = await createSchema();

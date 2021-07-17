@@ -1,6 +1,6 @@
 import { sign, verify } from 'jsonwebtoken';
-import config from '../../config';
-import { UserRole } from '../../enums';
+import config from '~/config';
+import { UserRole } from '~/enums';
 
 export enum AuthType {
   ADMIN = 'a',

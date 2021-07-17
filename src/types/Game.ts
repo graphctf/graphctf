@@ -1,7 +1,7 @@
 import { Game as PrismaGame, Prisma } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
-import { Context } from '../context';
+import { Context } from '~/context';
 import { User } from './User';
 import { Team } from './Team';
 import { Challenge } from './Challenge';

@@ -1,6 +1,6 @@
 import { createMethodDecorator } from 'type-graphql';
 import { Context } from '..';
-import { UserRole } from '../../enums';
+import { UserRole } from '~/enums';
 
 export function MemberOfGame(argName: string): MethodDecorator {
   // Assumes auth has already been checked.

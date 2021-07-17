@@ -1,7 +1,7 @@
 import { Container } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { UserRole } from '../../enums';
-import { makeCache } from '../../redis';
+import { UserRole } from '~/enums';
+import { makeCache } from '~/redis';
 import { serializeAuthorizationToken, authTypeFromUserRole } from './AuthorizationToken';
 
 const loginAuthorizationTokenCache = makeCache('authorization-token');

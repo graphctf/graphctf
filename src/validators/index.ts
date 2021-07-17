@@ -1,3 +1,6 @@
+// @create-index {"mode":"*"}
+
 export * from './IIF';
-export * from './RelativeNumericComparison';
 export * from './RelativeDateComparison';
+export * from './RelativeNumericComparison';
+

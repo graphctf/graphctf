@@ -1,10 +1,14 @@
-export { Attempt } from './Attempt';
-export { Challenge } from './Challenge';
-export { Game } from './Game';
-export { Hint } from './Hint';
-export { Message } from './Message';
-export { HintReveal } from './HintReveal';
-export { Solution } from './Solution';
-export { Tag } from './Tag';
-export { Team } from './Team';
-export { User } from './User';
+// @create-index {"mode":"*"}
+
+export * from './Attempt';
+export * from './Challenge';
+export * from './FromPrisma';
+export * from './Game';
+export * from './Hint';
+export * from './HintReveal';
+export * from './Message';
+export * from './Solution';
+export * from './Tag';
+export * from './Team';
+export * from './User';
+

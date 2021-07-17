@@ -2,8 +2,8 @@ import path from 'path';
 import { buildSchema, NonEmptyArray } from 'type-graphql';
 import { GraphQLSchema } from 'graphql';
 import { Container } from 'typedi';
-import * as resolvers from './resolvers';
-import { authChecker } from './context';
+import * as resolvers from '~/resolvers';
+import { authChecker } from '~/context';
 
 export async function createSchema() : Promise<GraphQLSchema> {
   return buildSchema({

@@ -1,5 +1,5 @@
 import { verify } from 'jsonwebtoken';
-import config from '../../config';
+import config from '~/config';
 
 export type LoginToken = { username: string, nickname?: string } | { username?: string, nickname: string }
 
