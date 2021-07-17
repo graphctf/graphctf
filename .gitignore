@@ -8,5 +8,6 @@ dist
 # Prisma
 generated
 
-# NPM
+# NPM/Yarn
 node_modules
+yarn-error.log

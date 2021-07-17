@@ -1,8 +1,9 @@
 import Express from 'express';
 import http from 'http';
+import ws from 'ws';
+import { info } from '~/log';
 import { ApolloServer } from 'apollo-server-express';
 import { graphqlUploadExpress } from 'graphql-upload';
-import ws from 'ws';
 import { execute, subscribe } from 'graphql';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createSchema } from '~/schema';
@@ -34,6 +35,6 @@ export default async function server(): Promise<void> {
     }, wsServer);
 
     // eslint-disable-next-line no-console
-    console.log(`Listening on http://0.0.0.0:${config.port}`);
+    info('server', `Listening on http://0.0.0.0:${config.port}`);
   });
 }
