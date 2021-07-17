@@ -16,7 +16,11 @@
     "experimentalDecorators": true,
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "moduleResolution": "node",
+    "paths": {
+      "~/*": ["./src/*"]
+    },
   },
   "include": [
     "types.d.ts",

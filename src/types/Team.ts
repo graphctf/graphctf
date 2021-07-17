@@ -1,5 +1,6 @@
 import { Team as PrismaTeam } from '@prisma/client';
-import { ObjectType, Field } from 'type-graphql';
+import { ObjectType, Field, Authorized } from 'type-graphql';
+import { AuthRequirement } from '~/context';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { User } from './User';
@@ -27,6 +28,11 @@ export class Team extends FromPrisma<PrismaTeam> implements PrismaTeam {
 
   @Field(() => Number, { defaultValue: 0 })
   points: number
+
+  // TODO(@tylermenezes): AdminOrMyTeam
+  @Authorized(AuthRequirement.ADMIN)
+  @Field(() => String)
+  code: string
 
   // Relations
   @PrismaRelation(() => Game)

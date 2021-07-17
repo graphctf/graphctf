@@ -93,7 +93,7 @@ export class Game extends FromPrisma<PrismaGame> implements PrismaGame {
 
     const challenges: Prisma.ChallengeWhereInput | boolean = true; // TODO(@tylermenezes)
     const showOnlyGame = auth.isUser ? { where: { game: { id: auth.gameId! } } } : false;
-    const showOnlyTeam = auth.isUser ? { where: { team: { slug: auth.teamSlug! } } } : false;
+    const showOnlyTeam = auth.isUser ? { where: { team: { id: auth.teamId! } } } : false;
 
     return {
       users: showOnlyGame,

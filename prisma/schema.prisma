@@ -28,7 +28,7 @@ model Game {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   name String
@@ -55,7 +55,7 @@ model Message {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   title   String
@@ -70,7 +70,7 @@ model User {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   username String
@@ -91,11 +91,12 @@ model Team {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   slug   String
   name   String
+  code   String @unique
   points Int    @default(0)
 
   // Relations
@@ -105,14 +106,14 @@ model Team {
   attempts    Attempt[]
   hintReveals HintReveal[]
 
-  @@unique([slug, gameId])
+  @@unique([ gameId, slug ])
 }
 
 model Challenge {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   slug     String
@@ -149,7 +150,7 @@ model Tag {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   slug String
@@ -166,7 +167,7 @@ model Solution {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   text String
@@ -183,7 +184,7 @@ model Hint {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   text        String    @db.Text
@@ -202,7 +203,7 @@ model Attempt {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   submission      String?
@@ -226,7 +227,7 @@ model HintReveal {
   // Metadata
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Data
   pointsCost Int?

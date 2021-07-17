@@ -3,9 +3,9 @@ import {
 } from 'type-graphql';
 import { PrismaClient } from '@prisma/client';
 import { Inject, Service } from 'typedi';
-import { Game } from '../types';
-import { CreateEditGameInput, FindOneIdInput } from '../inputs';
-import { Context, AuthRequirement } from '../context';
+import { Challenge, Game } from '~/types';
+import { CreateGameInput, EditGameInput, FindOneIdInput } from '~/inputs';
+import { Context, AuthRequirement, MemberOfGame } from '~/context';
 
 @Service()
 @Resolver(Game)
@@ -26,6 +26,7 @@ export class GameResolver {
   }
 
   @Authorized()
+  @MemberOfGame('where')
   @Query(() => Game, { nullable: true })
   async game(
     @Ctx() context: Context,
@@ -45,7 +46,7 @@ export class GameResolver {
   @Authorized(AuthRequirement.ADMIN)
   @Mutation(() => Game)
   async createGame(
-    @Arg('data', () => CreateEditGameInput) data: CreateEditGameInput,
+    @Arg('data', () => CreateGameInput) data: CreateGameInput,
   ): Promise<Game> {
     return new Game(await this.prisma.game.create({
       data,
@@ -57,7 +58,7 @@ export class GameResolver {
   async editGame(
     @Ctx() context: Context,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
-    @Arg('data', () => CreateEditGameInput) data: CreateEditGameInput,
+    @Arg('data', () => EditGameInput) data: EditGameInput,
   ): Promise<Game> {
     return new Game(await this.prisma.game.update({
       where,

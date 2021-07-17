@@ -76,31 +76,6 @@ export class User extends FromPrisma<PrismaUser> implements PrismaUser {
   }
 
   /**
-   * Removes the user's progress, and updates their team.
-   */
-  async changeTeam(slug: string): Promise<void> {
-    await this.resetProgress();
-    const { teamId, team } = await prisma.user.update({
-      where: this.toPrismaWhere(),
-      include: { team: true },
-      data: {
-        team: {
-          connectOrCreate: {
-            where: { slug_gameId: { slug, gameId: this.gameId } },
-            create: {
-              slug,
-              name: slug,
-              game: { connect: { id: this.gameId } },
-            },
-          },
-        },
-      },
-    });
-    this.teamId = teamId;
-    this.team = new Team(team);
-  }
-
-  /**
    * Finds the user record for a given username and game ID.
    */
   static async fromUsernameAndGameId(

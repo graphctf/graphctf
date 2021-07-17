@@ -1,6 +1,6 @@
 import { InputType, Field } from 'type-graphql';
 import { Prisma } from '@prisma/client';
-import { FindOneSlugOrIdInput } from './FindOneSlugOrIdInput';
+import { FindOneSlugOrIdInput } from '~/inputs/FindOneSlugOrIdInput';
 
 @InputType()
 export class TagFilterInput {
@@ -12,12 +12,4 @@ export class TagFilterInput {
 
   @Field(() => FindOneSlugOrIdInput, { nullable: true })
   tag?: FindOneSlugOrIdInput | undefined
-
-  toQuery(): Prisma.TagWhereInput {
-    return {
-      AND: this.AND,
-      OR: this.OR,
-      ...this.tag?.toQuery(),
-    };
-  }
 }

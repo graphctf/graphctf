@@ -7,9 +7,9 @@ import {
   ChallengeAttemptStatus,
   ChallengeAttemptStatusToFilter,
   ChallengeRequirementStatusToWhere,
-} from '../enums';
-import { Context } from '../context';
-import { TagFilterInput } from './TagFilterInput';
+} from '~/enums';
+import { Context } from '~/context';
+import { TagFilterInput } from '~/inputs/Tag';
 
 @InputType()
 export class ChallengeFilterInput {
@@ -34,16 +34,16 @@ export class ChallengeFilterInput {
     return {
       AND: [
         this.tag
-          ? { tags: { some: this.tag.toQuery() } }
+          ? { tags: { some: this.tag } }
           : {},
         this.visibilityStatus
           ? ChallengeVisibilityStatusToWhere(this.visibilityStatus)
           : {},
         this.requirementStatus
-          ? ChallengeRequirementStatusToWhere(this.requirementStatus, { team: { slug: ctx.auth.teamSlug! } })
+          ? ChallengeRequirementStatusToWhere(this.requirementStatus, { team: { id: ctx.auth.teamId! } })
           : {},
         this.attemptStatus
-          ? { attempts: ChallengeAttemptStatusToFilter(this.attemptStatus, { team: { slug: ctx.auth.teamSlug! } }) }
+          ? { attempts: ChallengeAttemptStatusToFilter(this.attemptStatus, { team: { id: ctx.auth.teamId! } }) }
           : {},
       ],
     };
