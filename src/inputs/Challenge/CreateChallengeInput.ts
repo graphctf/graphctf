@@ -42,11 +42,15 @@ export class CreateChallengeInput {
   pointsEnd?: number
 
   @Field(is => Date, { nullable: true })
-  @IIF((self: CreateChallengeInput) => self.scoring === ChallengeScoringType.DECREASE_WITH_TIME)
+  @IIF((self: CreateChallengeInput) => self.scoring === ChallengeScoringType.CHANGE_WITH_TIME)
+  pointsStartAt?: Date
+
+  @Field(is => Date, { nullable: true })
+  @IIF((self: CreateChallengeInput) => self.scoring === ChallengeScoringType.CHANGE_WITH_TIME)
   pointsEndAt?: Date
 
   @Field(is => Number, { nullable: true })
-  @IIF((self: CreateChallengeInput) => self.scoring === ChallengeScoringType.DECREASE_WITH_SOLVES)
+  @IIF((self: CreateChallengeInput) => self.scoring === ChallengeScoringType.CHANGE_WITH_SOLVES)
   @Min(1)
   pointsEndSolveCount?: number
 

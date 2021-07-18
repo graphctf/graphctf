@@ -10,6 +10,10 @@ import { FindOneIdInput, CreateChallengeInput, EditChallengeInput, FindOneGameSl
 // Attempt
 // Hint Reveal
 
+// Outstanding score requests
+// Subscribe to event for score requests
+// Judge score request
+
 @Service()
 @Resolver(() => Challenge)
 export class ChallengeResolver {

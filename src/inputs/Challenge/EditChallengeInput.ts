@@ -44,6 +44,9 @@ export class EditChallengeInput {
   pointsEnd?: number
 
   @Field(is => Date, { nullable: true })
+  pointsStartAt?: Date
+
+  @Field(is => Date, { nullable: true })
   pointsEndAt?: Date
 
   @Field(is => Number, { nullable: true })

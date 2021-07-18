@@ -1,6 +1,29 @@
 import { createMethodDecorator } from 'type-graphql';
-import { Context } from '..';
 import { UserRole } from '~/enums';
+import { Context } from '..';
+
+export function RequireUser(): MethodDecorator {
+  return createMethodDecorator<Context>(async ({ args, context: { auth } }, next) => {
+    if (auth.isUser) return next();
+    throw Error(`You must be a user to perform that action.`);
+  });
+}
+
+export function RequireUserOrArg(argName: string): MethodDecorator {
+  return createMethodDecorator<Context>(async ({ args, context: { auth } }, next) => {
+    if (auth.isUser) return next();
+    if (typeof args[argName] !== undefined && args[argName] !== null) return next();
+    throw Error(`${argName} is required for non-users.`);
+  });
+}
+
+export function ForbidUserSpecification(argName: string): MethodDecorator {
+  return createMethodDecorator<Context>(async ({ args, context: { auth } }, next) => {
+    if (!auth.isUser) return next();
+    if (typeof args[argName] === undefined || args[argName] === null) return next();
+    throw Error(`Users cannot specify ${argName}.`);
+  });
+}
 
 export function MemberOfGame(argName: string): MethodDecorator {
   // Assumes auth has already been checked.

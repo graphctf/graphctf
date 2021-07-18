@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { Game, Team, ScoreboardEntry } from '~/types';
 import { GameTopics, GameTopicPayload, filterGame as filter } from '~/subscriptions';
 import { FindOneIdInput } from '~/inputs';
-import { Context } from '~/context';
+import { Context, RequireUserOrArg, ForbidUserSpecification } from '~/context';
 
 @Service()
 @Resolver(() => Game)
@@ -12,21 +12,38 @@ export class GameResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
 
+  @Query(() => Game, { nullable: true })
+  @RequireUserOrArg('where')
+  @ForbidUserSpecification('where')
+  async game(
+    @Ctx() { auth }: Context,
+    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+  ): Promise<Game | null> {
+    const game = await this.prisma.game.findFirst({
+      where: auth.isAdmin ? where : { id: auth.gameId! },
+    });
+    if (!game) return null;
+    return new Game(game);
+  }
+
   @Subscription(() => Game, { name: 'game', topics: GameTopics.GAME, filter, nullable: true })
+  @RequireUserOrArg('where')
+  @ForbidUserSpecification('where')
   async gameSubscription(
     @Root() { _del }: GameTopicPayload,
+    @Ctx() ctx: Context,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
   ): Promise<Game | null> {
     if (_del) return null;
-    return new Game(
-      await this.prisma.game.findFirst({ where })
-    );
+    return this.game(ctx, where);
   }
 
   @Query(() => [ScoreboardEntry])
+  @RequireUserOrArg('where')
+  @ForbidUserSpecification('where')
   async scores(
     @Ctx() { auth }: Context,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<ScoreboardEntry[]> {
     const teams = Team.FromArray(
       await this.prisma.team.findMany({
@@ -45,21 +62,26 @@ export class GameResolver {
       .sort((a, b) => {
         // By default sort by highest points
         if (a.points !== b.points) return a.points > b.points ? -1 : 1;
+        // This shouldn't ever happen, because you have to have a solution to have points:
+        if (!a.attempts || !b.attempts) return 0;
         // If two teams have the same points, sort whoever got there first higher
         return a.attempts[0].createdAt.getTime() < b.attempts[0].createdAt.getTime() ? -1 : 1;
       })
-      .map(({ attempts, ...team }, ranking) => ({
+      .map((team) => { team.attempts = null; return team; }) // Remove attempts so it loads all of them later
+      .map((team, ranking) => ({
         ranking,
-        team: { ...team, attempts: null },
+        team,
         teamId: team.id,
       }));
   }
 
   @Subscription(() => [ScoreboardEntry], { name: 'scores', topics: GameTopics.SCORES, filter })
+  @RequireUserOrArg('where')
+  @ForbidUserSpecification('where')
   async scoresSubscription(
     @Root() { _del }: GameTopicPayload,
     @Ctx() ctx: Context,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<ScoreboardEntry[]> {
     if (_del) return [];
     return this.scores(ctx, where);
