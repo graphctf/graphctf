@@ -1,15 +1,28 @@
-import 'reflect-metadata';
 import { Arg, Mutation } from 'type-graphql';
 import { Service } from 'typedi';
-import { deserializeLoginToken, login } from '~/context';
+import { AuthType, deserializeLoginToken, login, serializeAuthorizationToken } from '~/context';
+import config from '~/config';
+import { AuthorizationTokenResponse } from '~/types';
 
 @Service()
 export class ExchangeTokenResolver {
-  @Mutation(() => String)
+  @Mutation(() => AuthorizationTokenResponse)
   async login(
     @Arg('loginToken', () => String) loginToken: string,
     @Arg('code', () => String) code: string,
-  ): Promise<string> {
+  ): Promise<AuthorizationTokenResponse> {
     return login(deserializeLoginToken(loginToken), code);
+  }
+
+  @Mutation(() => AuthorizationTokenResponse)
+  async adminLogin(
+    @Arg('password', () => String) password: string,
+  ): Promise<AuthorizationTokenResponse> {
+    // TODO(@tylermenezes): Rate limiting
+    if (password === config.adminPassword) {
+      return serializeAuthorizationToken({ typ: AuthType.ADMIN });
+    } else {
+      throw Error('Incorrect password.');
+    }
   }
 }

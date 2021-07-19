@@ -4,6 +4,6 @@ import { Message } from '~/types';
 
 @Service()
 @Resolver(() => Message)
-export class MessageResolver {
+export class AdminMessageResolver {
 
 }

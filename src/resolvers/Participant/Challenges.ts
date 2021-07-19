@@ -19,7 +19,7 @@ import { checkSolution, scoreChallenge } from '~/utils';
 
 @Service()
 @Resolver(() => Challenge)
-export class ChallengeResolver {
+export class ParticipantChallengeResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
   @Subscription(() => [Challenge], { name: 'challenges', topics: GameTopics.CHALLENGES, filter })

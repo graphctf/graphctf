@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, User as PrismaUser } from '@prisma/client';
+import { PrismaClient, Prisma, User as PrismaUser, HintReveal } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
 import { Container } from 'typedi';
 import { UserRole } from '../enums';
@@ -6,7 +6,6 @@ import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Team } from './Team';
 import { Attempt } from './Attempt';
-import { HintReveal } from './HintReveal';
 
 const prisma = Container.get(PrismaClient);
 
@@ -31,23 +30,27 @@ export class User extends FromPrisma<PrismaUser> implements PrismaUser {
 
   // Relations
   @PrismaRelation(() => Game)
-  @Field(() => Game)
   game: Game
-
   gameId: string
 
   @PrismaRelation(() => Team)
-  @Field(() => Team)
   team: Team
-
   teamId: string
 
+  @Field(() => Team, { name: 'team' })
+  async fetchTeam(): Promise<Team> {
+    if (!this.team) {
+      this.team = new Team(
+        await Container.get(PrismaClient).team.findUnique({ where: { id: this.teamId } }),
+      );
+    }
+    return this.team;
+  }
+
+
   @PrismaRelation(() => [Attempt])
-  @Field(() => [Attempt])
   attempts: Attempt[]
 
-  @PrismaRelation(() => [HintReveal])
-  @Field(() => [HintReveal])
   hintReveals: HintReveal[]
 
   toPrismaWhere(): Prisma.UserWhereUniqueInput {

@@ -4,6 +4,6 @@ import { Team } from '~/types';
 
 @Service()
 @Resolver(() => Team)
-export class TeamResolver {
+export class AdminTeamResolver {
 
 }

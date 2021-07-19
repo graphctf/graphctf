@@ -5,6 +5,7 @@ import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Container } from 'typedi';
 import * as resolvers from '~/resolvers';
 import { authChecker } from '~/context';
+import { ErrorInterceptor } from '~/middleware';
 
 export async function createSchema() : Promise<GraphQLSchema> {
   return buildSchema({
@@ -17,5 +18,6 @@ export async function createSchema() : Promise<GraphQLSchema> {
     validate: true,
     authChecker,
     pubSub: Container.get(RedisPubSub),
+    globalMiddlewares: [ErrorInterceptor],
   });
 }

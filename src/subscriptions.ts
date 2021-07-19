@@ -5,7 +5,6 @@ import { NoExtraProperties } from '~/utils';
 
 export enum GameTopics {
   GAME = "GAME",
-  CHALLENGES = "GAME_CHALLENGES",
   MESSAGES = "GAME_MESSAGES",
   TEAMS = "GAME_TEAMS",
   SCORES = "GAME_SCORES",

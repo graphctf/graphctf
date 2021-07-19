@@ -5,12 +5,12 @@ import { PrismaClient } from '@prisma/client';
 import { Inject, Service } from 'typedi';
 import { Challenge, Game } from '~/types';
 import { CreateGameInput, EditGameInput, FindOneIdInput } from '~/inputs';
-import { Context, AuthRequirement, MemberOfGame } from '~/context';
+import { Context, AuthRequirement, RequireMemberOfGame } from '~/context';
 import { GameTopics, GameTopicPayload } from '~/subscriptions';
 
 @Service()
 @Resolver(Game)
-export class GameResolver {
+export class AdminGameResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
 
@@ -27,7 +27,7 @@ export class GameResolver {
   }
 
   @Authorized()
-  @MemberOfGame('where')
+  @RequireMemberOfGame('where')
   @Query(() => Game, { nullable: true })
   async game(
     @Ctx() context: Context,

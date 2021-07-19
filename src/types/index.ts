@@ -1,11 +1,11 @@
 // @create-index {"mode":"*"}
 
 export * from './Attempt';
+export * from './AuthorizationTokenResponse';
 export * from './Challenge';
 export * from './FromPrisma';
 export * from './Game';
 export * from './Hint';
-export * from './HintReveal';
 export * from './Message';
 export * from './ScoreboardEntry';
 export * from './Solution';

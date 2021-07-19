@@ -16,7 +16,7 @@ import { FindOneIdInput, CreateChallengeInput, EditChallengeInput, FindOneGameSl
 
 @Service()
 @Resolver(() => Challenge)
-export class ChallengeResolver {
+export class AdminChallengeResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
 
@@ -26,7 +26,7 @@ export class ChallengeResolver {
     @Arg('game', () => FindOneIdInput) game: FindOneIdInput,
     @Arg('challenge', () => CreateChallengeInput) challenge: CreateChallengeInput
   ): Promise<void> {
-    // TODO(@tylermenezes)
+    // TODO
   }
 
   @Authorized(AuthRequirement.ADMIN)

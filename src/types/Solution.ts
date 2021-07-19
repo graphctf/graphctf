@@ -26,14 +26,10 @@ export class Solution extends FromPrisma<PrismaSolution> implements PrismaSoluti
 
   // Relations
   @PrismaRelation(() => Game)
-  @Field(() => Game)
   game: Game
-
   gameId: string
 
   @PrismaRelation(() => Challenge)
-  @Field(() => Challenge)
   challenge: Challenge
-
   challengeId: string
 }

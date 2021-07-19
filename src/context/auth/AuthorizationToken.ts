@@ -1,6 +1,9 @@
 import { sign, verify } from 'jsonwebtoken';
+import { DateTime } from 'luxon';
 import config from '~/config';
 import { UserRole } from '~/enums';
+import { AuthorizationTokenResponse } from '~/types';
+import { debug } from '~/log';
 
 export enum AuthType {
   ADMIN = 'a',
@@ -56,7 +59,19 @@ export function deserializeAuthorizationToken(tokenStr: string): AuthorizationTo
   return token;
 }
 
-export function serializeAuthorizationToken(token: AuthorizationToken): string {
+export function serializeAuthorizationToken(token: AuthorizationToken): AuthorizationTokenResponse {
   validateToken(token);
-  return sign(token, config.token.session.secret, { audience: config.token.session.audience });
+  const expires = DateTime.local().plus({ days: 5 });
+  const tokenStr = sign(
+    { ...token, exp: expires.toSeconds() },
+    config.token.session.secret,
+    { audience: config.token.session.audience }
+  );
+
+  debug('login', `Minted typ=${token.typ} token for uid=${token.sub}, gid=${token.gam}, tid=${token.tea}`);
+
+  return {
+    token: tokenStr,
+    expiresAt: expires.toJSDate(),
+  };
 }

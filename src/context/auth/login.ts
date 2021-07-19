@@ -3,12 +3,19 @@ import { PrismaClient } from '@prisma/client';
 import { UserRole } from '~/enums';
 import { makeCache } from '~/redis';
 import { serializeAuthorizationToken, authTypeFromUserRole } from './AuthorizationToken';
+import { AuthorizationTokenResponse } from '~/types';
+import { debug } from '~/log';
 
 const loginAuthorizationTokenCache = makeCache('authorization-token');
+const loginAuthorizationExpCache = makeCache('authorization-token-exp');
 
-export async function login(username: string, code: string): Promise<string> {
+export async function login(username: string, code: string): Promise<AuthorizationTokenResponse> {
   const key = JSON.stringify({ username, code });
-  if (!await loginAuthorizationTokenCache.has(key)) {
+  const cachedToken = await loginAuthorizationTokenCache.get(key);
+  const cachedExp = await loginAuthorizationExpCache.get(key);
+  debug('login', '${username} logged in with code ${code}');
+
+  if (!(cachedToken && cachedExp)) {
     const prisma = Container.get(PrismaClient);
     const team = await prisma.team.findUnique({
       where: { code },
@@ -36,9 +43,16 @@ export async function login(username: string, code: string): Promise<string> {
       tea: teamId,
       gam: gameId,
     });
-    await loginAuthorizationTokenCache.set(key, authorizationToken);
+
+    const expiresIn = authorizationToken.expiresAt.getSeconds() - (new Date).getSeconds();
+    const ttl = Math.floor(expiresIn * 0.75);
+    await loginAuthorizationTokenCache.set(key, authorizationToken.token, ttl);
+    await loginAuthorizationExpCache.set(key, authorizationToken.expiresAt.getSeconds().toString(), ttl);
     return authorizationToken;
   }
 
-  return <string><unknown>loginAuthorizationTokenCache.get(key);
+  return {
+    token: cachedToken,
+    expiresAt: new Date(Number.parseInt(cachedExp) * 1000),
+  };
 }

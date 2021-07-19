@@ -4,17 +4,17 @@ import { PrismaClient } from '@prisma/client';
 import { Game, Team, ScoreboardEntry } from '~/types';
 import { GameTopics, GameTopicPayload, filterGame as filter } from '~/subscriptions';
 import { FindOneIdInput } from '~/inputs';
-import { Context, RequireUserOrArg, ForbidUserSpecification } from '~/context';
+import { Context, RequireUserOrArg, ForbidUserArg } from '~/context';
 
 @Service()
 @Resolver(() => Game)
-export class GameResolver {
+export class ParticipantGameResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
 
   @Query(() => Game, { nullable: true })
   @RequireUserOrArg('where')
-  @ForbidUserSpecification('where')
+  @ForbidUserArg('where')
   async game(
     @Ctx() { auth }: Context,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
@@ -28,7 +28,7 @@ export class GameResolver {
 
   @Subscription(() => Game, { name: 'game', topics: GameTopics.GAME, filter, nullable: true })
   @RequireUserOrArg('where')
-  @ForbidUserSpecification('where')
+  @ForbidUserArg('where')
   async gameSubscription(
     @Root() { _del }: GameTopicPayload,
     @Ctx() ctx: Context,
@@ -40,7 +40,7 @@ export class GameResolver {
 
   @Query(() => [ScoreboardEntry])
   @RequireUserOrArg('where')
-  @ForbidUserSpecification('where')
+  @ForbidUserArg('where')
   async scores(
     @Ctx() { auth }: Context,
     @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
@@ -77,7 +77,7 @@ export class GameResolver {
 
   @Subscription(() => [ScoreboardEntry], { name: 'scores', topics: GameTopics.SCORES, filter })
   @RequireUserOrArg('where')
-  @ForbidUserSpecification('where')
+  @ForbidUserArg('where')
   async scoresSubscription(
     @Root() { _del }: GameTopicPayload,
     @Ctx() ctx: Context,

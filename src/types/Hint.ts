@@ -1,14 +1,15 @@
-import { Hint as PrismaHint } from '@prisma/client';
-import { ObjectType, Field } from 'type-graphql';
+import { Hint as PrismaHint, PrismaClient } from '@prisma/client';
+import { ObjectType, Field, Ctx, Arg } from 'type-graphql';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Challenge } from './Challenge';
-import { HintReveal } from './HintReveal';
-
-export type HintPrismaPartial = Omit<PrismaHint, 'text'> & { text: string | null };
+import { FindOneGameSlugOrIdInput } from '~/inputs';
+import { AdminOnlyArg, Context, RequireUserOrArg } from '~/context';
+import { RequireVisible } from '~/middleware';
+import Container from 'typedi';
 
 @ObjectType()
-export class Hint extends FromPrisma<PrismaHint> implements HintPrismaPartial {
+export class Hint extends FromPrisma<PrismaHint> implements PrismaHint {
   // Metadata
   @Field(() => String)
   id: string
@@ -21,7 +22,8 @@ export class Hint extends FromPrisma<PrismaHint> implements HintPrismaPartial {
 
   // Data
   @Field(() => String, { nullable: true })
-  text: string | null
+  @RequireVisible(null, 'isRevealed')
+  text: string
 
   @Field(() => Date, { nullable: true })
   availableAt: Date | null
@@ -31,18 +33,26 @@ export class Hint extends FromPrisma<PrismaHint> implements HintPrismaPartial {
 
   // Relations
   @PrismaRelation(() => Game)
-  @Field(() => Game)
   game: Game
-
   gameId: string
 
   @PrismaRelation(() => Challenge)
-  @Field(() => Challenge)
   challenge: Challenge
-
   challengeId: string
 
-  @PrismaRelation(() => [HintReveal])
-  @Field(() => [HintReveal])
-  hintReveals: HintReveal[]
+  @Field(() => Boolean)
+  @RequireUserOrArg('team')
+  @AdminOnlyArg('team')
+  async isRevealed(
+    @Ctx() { auth }: Context,
+    @Arg('team', () => FindOneGameSlugOrIdInput, { nullable: true }) team?: FindOneGameSlugOrIdInput,
+  ): Promise<boolean> {
+    const reveals = await Container.get(PrismaClient).hintReveal.count({
+      where: {
+        ...(auth.isAdmin && team ? { team } : { team: { id: auth.teamId! } }),
+        hint: { id: this.id },
+      }
+    });
+    return reveals > 0;
+  }
 }

@@ -7,7 +7,7 @@ import { FindOneIdInput } from '~/inputs';
 
 @Service()
 @Resolver(() => Message)
-export class MessageResolver {
+export class ParticipantMessageResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
   @Subscription(() => [Message], { name: 'messages', topics: GameTopics.MESSAGES, filter })

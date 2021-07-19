@@ -1,5 +1,5 @@
-import { Challenge as PrismaChallenge } from '@prisma/client';
-import { ObjectType, Field } from 'type-graphql';
+import { Challenge as PrismaChallenge, HintReveal, Prisma, PrismaClient } from '@prisma/client';
+import { ObjectType, Field, Ctx, Arg } from 'type-graphql';
 import { ChallengeScoringType } from '../enums';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
@@ -7,7 +7,10 @@ import { Tag } from './Tag';
 import { Solution } from './Solution';
 import { Hint } from './Hint';
 import { Attempt } from './Attempt';
-import { HintReveal } from './HintReveal';
+import Container from 'typedi';
+import { RequireAdmin, Context, RequireUserOrArg, AdminOnlyArg } from '~/context';
+import { FindOneGameSlugOrIdInput } from '~/inputs';
+import { RequireVisible } from '~/middleware';
 
 @ObjectType()
 export class Challenge extends FromPrisma<PrismaChallenge> implements PrismaChallenge {
@@ -22,13 +25,46 @@ export class Challenge extends FromPrisma<PrismaChallenge> implements PrismaChal
   updatedAt: Date
 
   // Data
+  @Field(() => Boolean)
+  @RequireUserOrArg('team')
+  @AdminOnlyArg('team')
+  async isVisible(
+    @Ctx() ctx: Context,
+    @Arg('team', () => FindOneGameSlugOrIdInput, { nullable: true }) team?: FindOneGameSlugOrIdInput,
+  ): Promise<boolean> {
+    const now = new Date();
+    if (this.startsAt && this.startsAt.getTime() > now.getTime()) return false;
+    if (this.endsAt && this.endsAt.getTime() < now.getTime()) return false;
+    if (this.requiresChallengeId) {
+      const requirement = await this.fetchRequiresChallenge();
+      if (requirement && !await requirement.isSolved(ctx, team)) return false;
+    }
+
+    return true;
+  }
+
+  @Field(() => Boolean)
+  @RequireUserOrArg('team')
+  @AdminOnlyArg('team')
+  async isSolved(
+    @Ctx() { auth }: Context,
+    @Arg('team', () => FindOneGameSlugOrIdInput, { nullable: true }) team?: FindOneGameSlugOrIdInput,
+  ): Promise<boolean> {
+    return await Container.get(PrismaClient).attempt.count({ where: {
+      challenge: { id: this.id },
+      correct: true,
+      ...(auth.isAdmin && team ? { team } : { team: { id: auth.teamId! } }),
+    } }) > 0;
+  }
+
   @Field(() => String)
   slug: string
 
   @Field(() => String)
   title: string
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
+  @RequireVisible(null)
   text: string
 
   @Field(() => Date, { nullable: true })
@@ -53,6 +89,9 @@ export class Challenge extends FromPrisma<PrismaChallenge> implements PrismaChal
   pointsEnd: number
 
   @Field(() => Date)
+  pointsStartAt: Date
+
+  @Field(() => Date)
   pointsEndAt: Date
 
   @Field(() => Number)
@@ -60,38 +99,97 @@ export class Challenge extends FromPrisma<PrismaChallenge> implements PrismaChal
 
   // Relations
   @PrismaRelation(() => Game)
-  @Field(() => Game)
   game: Game
-
   gameId: string
 
   @PrismaRelation(() => Challenge)
-  @Field(() => Challenge, { nullable: true })
   requiresChallenge: Challenge | null
-
   requiresChallengeId: string | null
 
+  @Field(() => Challenge, { nullable: true, name: 'requiresChallenge' })
+  async fetchRequiresChallenge(): Promise<Challenge | null> {
+    if (!this.requiresChallenge && this.requiresChallengeId) {
+      this.requiresChallenge = new Challenge(
+        await Container.get(PrismaClient).challenge.findUnique({ where: { id: this.requiresChallengeId } })
+      );
+    }
+
+    return this.requiresChallenge;
+  }
+
   @PrismaRelation(() => [Challenge])
-  @Field(() => [Challenge])
   requiredBy: Challenge[]
 
+  @Field(() => [Challenge], { name: 'requiredBy' })
+  async fetchRequiredBy(): Promise<Challenge[]> {
+    if (!this.requiredBy) {
+      this.requiredBy = Challenge.FromArray(
+        await Container.get(PrismaClient).challenge.findMany({ where: { requiresChallenge: { id: this.id } } })
+      );
+    }
+    return this.requiredBy;
+  }
+
   @PrismaRelation(() => [Tag])
-  @Field(() => [Tag])
   tags: Tag[]
 
+  @Field(() => [Tag], { name: 'tags' })
+  async fetchTags(): Promise<Tag[]> {
+    if (!this.tags) {
+      this.tags = Tag.FromArray(
+        await Container.get(PrismaClient).tag.findMany({ where: { challenges: { some: { id: this.id } } } })
+      );
+    }
+    return this.tags;
+  }
+
+
   @PrismaRelation(() => [Solution])
-  @Field(() => [Solution])
   solutions: Solution[]
 
+  @Field(() => [Solution], { name: 'solution' })
+  @RequireAdmin()
+  async fetchSolutions(): Promise<Solution[]> {
+    if (!this.solutions) {
+      this.solutions = Solution.FromArray(
+        await Container.get(PrismaClient).solution.findMany({ where: { challenge: { id: this.id } } })
+      );
+    }
+    return this.solutions;
+  }
+
   @PrismaRelation(() => [Hint])
-  @Field(() => [Hint])
   hints: Hint[]
 
-  @PrismaRelation(() => [HintReveal])
-  @Field(() => [HintReveal])
-  hintReveals: HintReveal[]
+  @Field(() => [Hint], { name: 'hints' })
+  async fetchHints(): Promise<Hint[]> {
+    if (!this.hints) {
+      this.hints = Hint.FromArray(
+        await Container.get(PrismaClient).hint.findMany({ where: { challenge: { id: this.id } } })
+      );
+    }
+    return this.hints;
+  }
+
+  hintReveals: HintReveal[] | null
 
   @PrismaRelation(() => [Attempt])
-  @Field(() => [Attempt])
   attempts: Attempt[]
+
+  @Field(() => [Attempt], { name: 'attempts' })
+  @RequireUserOrArg('team')
+  @AdminOnlyArg('team')
+  async fetchAttempts(
+    @Ctx() { auth }: Context,
+    @Arg('team', () => FindOneGameSlugOrIdInput, { nullable: true }) team?: FindOneGameSlugOrIdInput,
+    @Arg('correct', () => Boolean, { nullable: true }) correct?: boolean,
+  ): Promise<Attempt[]> {
+    return Attempt.FromArray(
+      await Container.get(PrismaClient).attempt.findMany({ where: {
+        challenge: { id: this.id },
+        ...(auth.isAdmin && team ? { team } : { team: { id: auth.teamId! } }),
+        ...(typeof correct !== 'undefined' && correct !== null ? { correct } : {})
+      } })
+    );
+  }
 }

@@ -4,6 +4,6 @@ import { User } from '~/types';
 
 @Service()
 @Resolver(() => User)
-export class UserResolver {
+export class ParticipantUserResolver {
 
 }

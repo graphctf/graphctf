@@ -4,6 +4,6 @@ import { Tag } from '~/types';
 
 @Service()
 @Resolver(() => Tag)
-export class TagResolver {
+export class AdminTagResolver {
 
 }

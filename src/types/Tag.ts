@@ -1,5 +1,7 @@
-import { Tag as PrismaTag } from '@prisma/client';
+import { PrismaClient, Tag as PrismaTag } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
+import Container from 'typedi';
+import { RequireMemberOfGame } from '~/context';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Challenge } from './Challenge';
@@ -22,12 +24,20 @@ export class Tag extends FromPrisma<PrismaTag> implements PrismaTag {
 
   // Relations
   @PrismaRelation(() => Game)
-  @Field(() => Game)
   game: Game
-
   gameId: string
 
   @PrismaRelation(() => [Challenge])
-  @Field(() => [Challenge])
   challenges: Challenge[]
+
+  @Field(() => [Challenge])
+  @RequireMemberOfGame()
+  async fetchChallenges(): Promise<Challenge[]> {
+    if (!this.challenges) {
+      this.challenges = Challenge.FromArray(
+        await Container.get(PrismaClient).challenge.findMany({ where: { game: { id: this.id } } })
+      );
+    }
+    return this.challenges;
+  }
 }
