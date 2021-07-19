@@ -46,14 +46,6 @@ export class Attempt extends FromPrisma<PrismaAttempt> implements PrismaAttempt 
   game: Game
   gameId: string
 
-  @Field(() => Game)
-  async fetchGame(): Promise<Game> {
-    if (!this.game) {
-      this.game = new Game(await Container.get(PrismaClient).game.findUnique({ where: { id: this.gameId } }));
-    }
-    return this.game;
-  }
-
   @PrismaRelation(() => Team)
   team: Team
   teamId: string

@@ -1,5 +1,5 @@
 // @create-index {"mode":"*"}
 
-export * from './CheckTeamAccess';
+export * from './ReqiureVisible';
 export * from './ErrorInterceptor';
 
