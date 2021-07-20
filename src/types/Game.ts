@@ -1,7 +1,8 @@
 import { Game as PrismaGame, Prisma, PrismaClient } from '@prisma/client';
 import { ObjectType, Field, Ctx, Arg } from 'type-graphql';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
-import { Context, RequireMemberOfGame, RequireAdmin, AdminOnlyArg, RequireUserOrArg } from '~/context';
+import { Context } from '~/context';
+import { RequireMemberOfGame, RequireAdmin, AdminOnlyArg, RequireUserOrArg, ResolveIfMissing } from '~/middleware';
 import { User } from './User';
 import { Team } from './Team';
 import { Challenge } from './Challenge';
@@ -56,75 +57,34 @@ export class Game extends FromPrisma<PrismaGame> implements PrismaGame {
 
   // Relations
   @PrismaRelation(() => [User])
-  users: User[]
-
   @Field(() => [User])
   @RequireMemberOfGame()
-  async fetchUsers(): Promise<User[]> {
-    if (!this.users) {
-      this.users = User.FromArray(
-        await Container.get(PrismaClient).user.findMany({ where: { game: { id: this.id } } })
-      );
-    }
-    return this.users;
-  }
+  @ResolveIfMissing('user', ['gameId'])
+  users: User[]
 
   @PrismaRelation(() => [Team])
-  teams: Team[]
-
   @Field(() => [Team])
   @RequireMemberOfGame()
-  async fetchTeams(): Promise<Team[]> {
-    if (!this.teams) {
-      this.teams = Team.FromArray(
-        await Container.get(PrismaClient).team.findMany({ where: { game: { id: this.id } } })
-      );
-    }
-    return this.teams;
-  }
+  @ResolveIfMissing('team', ['gameId'])
+  teams: Team[]
 
   @PrismaRelation(() => [Challenge])
-  challenges: Challenge[]
-
   @Field(() => [Challenge])
   @RequireMemberOfGame()
-  async fetchChallenges(): Promise<Challenge[]> {
-    if (!this.challenges) {
-      this.challenges = Challenge.FromArray(
-        await Container.get(PrismaClient).challenge.findMany({ where: { game: { id: this.id } } })
-      );
-    }
-    return this.challenges;
-  }
+  @ResolveIfMissing('challenge', ['gameId'])
+  challenges: Challenge[]
 
   @PrismaRelation(() => [Message])
-  messages: Message[]
-
   @Field(() => [Message])
   @RequireMemberOfGame()
-  async fetchMessages(): Promise<Message[]> {
-    if (!this.tags) {
-      this.messages = Message.FromArray(
-        await Container.get(PrismaClient).message.findMany({ where: { game: { id: this.id } } })
-      );
-    }
-    return this.messages;
-  }
+  @ResolveIfMissing('message', ['gameId'])
+  messages: Message[]
 
   @PrismaRelation(() => [Tag])
-  tags: Tag[]
-
   @Field(() => [Tag])
   @RequireMemberOfGame()
-  async fetchTags(): Promise<Tag[]> {
-    if (!this.tags) {
-      this.tags = Tag.FromArray(
-        await Container.get(PrismaClient).tag.findMany({ where: { game: { id: this.id } } })
-      );
-    }
-    return this.tags;
-  }
-
+  @ResolveIfMissing('tag', ['gameId'])
+  tags: Tag[]
 
   @PrismaRelation(() => [Hint])
   hints: Hint[]

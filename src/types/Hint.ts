@@ -4,7 +4,8 @@ import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Challenge } from './Challenge';
 import { FindOneGameSlugOrIdInput } from '~/inputs';
-import { AdminOnlyArg, Context, RequireUserOrArg } from '~/context';
+import { Context } from '~/context';
+import { AdminOnlyArg, RequireUserOrArg } from '~/middleware';
 import { RequireVisible } from '~/middleware';
 import Container from 'typedi';
 

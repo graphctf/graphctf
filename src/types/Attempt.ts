@@ -1,12 +1,13 @@
 import { Attempt as PrismaAttempt, PrismaClient } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
 import Container from 'typedi';
-import { RequireMemberOfTeam } from '~/context';
+import { RequireMemberOfTeam, ResolveIfMissing } from '~/middleware';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Team } from './Team';
 import { User } from './User';
 import { Challenge } from './Challenge';
+import { resolve } from 'path/posix';
 
 @ObjectType()
 export class Attempt extends FromPrisma<PrismaAttempt> implements PrismaAttempt {
@@ -43,44 +44,26 @@ export class Attempt extends FromPrisma<PrismaAttempt> implements PrismaAttempt 
 
   // Relations
   @PrismaRelation(() => Game)
+  @Field(() => Game)
+  @ResolveIfMissing('game', 'gameId')
   game: Game
   gameId: string
 
   @PrismaRelation(() => Team)
+  @Field(() => Team)
+  @ResolveIfMissing('team', 'teamId')
   team: Team
   teamId: string
 
-  @Field(() => Team)
-  async fetchTeam(): Promise<Team> {
-    if (!this.team) {
-      this.team = new Team(await Container.get(PrismaClient).team.findUnique({ where: { id: this.teamId } }));
-    }
-    return this.team;
-  }
-
   @PrismaRelation(() => User)
+  @Field(() => User)
+  @ResolveIfMissing('user', 'userId')
   user: User
   userId: string
 
-  @Field(() => User)
-  async fetchUser(): Promise<User> {
-    if (!this.user) {
-      this.user = new User(await Container.get(PrismaClient).user.findUnique({ where: { id: this.userId } }));
-    }
-    return this.user;
-  }
-
   @PrismaRelation(() => Challenge)
+  @Field(() => Challenge)
+  @ResolveIfMissing('challenge', 'challengeId')
   challenge: Challenge
   challengeId: string
-
-  @Field(() => Challenge)
-  async fetchChallenge(): Promise<Challenge> {
-    if (!this.challenge) {
-      this.challenge = new Challenge(
-        await Container.get(PrismaClient).challenge.findUnique({ where: { id: this.challengeId } })
-      );
-    }
-    return this.challenge;
-  }
 }
