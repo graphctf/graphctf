@@ -1,4 +1,4 @@
-import { PrismaClient, Team } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
 import { Container } from 'typedi';
 import { plainToClass } from 'class-transformer';
@@ -6,6 +6,7 @@ import { ResolveIfMissing } from '~/middleware';
 import { ScoreboardEntry } from './ScoreboardEntry';
 import { Game } from './Game';
 
+@ObjectType()
 export class Scoreboard {
   @Field(() => Game)
   @ResolveIfMissing('game', 'gameId')

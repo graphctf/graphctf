@@ -44,9 +44,9 @@ export class ParticipantGameResolver {
     return new Game(payload);
   }
 
-  @Query(() => Scoreboard)
   @RequireUserOrArg('where')
   @AdminOnlyArg('where')
+  @Query(() => Scoreboard)
   async scores(
     @Ctx() { auth }: Context,
     @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,

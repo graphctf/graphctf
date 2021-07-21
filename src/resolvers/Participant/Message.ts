@@ -2,7 +2,7 @@ import { Resolver, Subscription, Arg, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
 import { Message } from '~/types';
-import { GameTopics, GameTopicPayload, filterGame as filter } from '~/subscriptions';
+import { GameMessageTopic, GameMessagePayload, filterGame } from '~/subscriptions';
 import { FindOneIdInput } from '~/inputs';
 
 @Service()
@@ -10,14 +10,11 @@ import { FindOneIdInput } from '~/inputs';
 export class ParticipantMessageResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
-  @Subscription(() => [Message], { name: 'messages', topics: GameTopics.MESSAGES, filter })
+  @Subscription(() => Message, { name: 'messages', topics: GameMessageTopic, filter: filterGame })
   async messagesSubscription(
-    @Root() { _del }: GameTopicPayload,
+    @Root() payload: GameMessagePayload,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
-  ): Promise<Message[]> {
-    if (_del) return [];
-    return Message.FromArray(
-      await this.prisma.message.findMany({ where: { game: where } })
-    );
+  ): Promise<Message> {
+    return new Message(payload);
   }
 }

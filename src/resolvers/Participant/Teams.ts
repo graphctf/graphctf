@@ -2,7 +2,7 @@ import { Resolver, Subscription, Arg, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
 import { Team } from '~/types';
-import { GameTopics, GameTopicPayload, filterGame as filter } from '~/subscriptions';
+import { GameTeamJoinTopic, GameTeamJoinPayload, filterGame } from '~/subscriptions';
 import { FindOneIdInput } from '~/inputs';
 
 @Service()
@@ -10,14 +10,11 @@ import { FindOneIdInput } from '~/inputs';
 export class ParticipantTeamResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
-  @Subscription(() => [Team], { name: 'teams', topics: GameTopics.TEAMS, filter })
+  @Subscription(() => Team, { name: 'teams', topics: GameTeamJoinTopic, filter: filterGame })
   async teamsSubscription(
-    @Root() { _del }: GameTopicPayload,
+    @Root() payload: GameTeamJoinPayload,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
-  ): Promise<Team[]> {
-    if (_del) return [];
-    return Team.FromArray(
-      await this.prisma.team.findMany({ where: { game: where } })
-    );
+  ): Promise<Team> {
+    return new Team(payload);
   }
 }
