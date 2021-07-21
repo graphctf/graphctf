@@ -5,7 +5,7 @@ import { Game } from './Game';
 import { Challenge } from './Challenge';
 import { FindOneGameSlugOrIdInput } from '~/inputs';
 import { Context } from '~/context';
-import { AdminOnlyArg, RequireUserOrArg } from '~/middleware';
+import { AdminOnlyArg, RequireUserOrArg, ResolveIfMissing } from '~/middleware';
 import { RequireVisible } from '~/middleware';
 import Container from 'typedi';
 
@@ -34,10 +34,14 @@ export class Hint extends FromPrisma<PrismaHint> implements PrismaHint {
 
   // Relations
   @PrismaRelation(() => Game)
+  @Field(() => Game)
+  @ResolveIfMissing('game', 'gameId')
   game: Game
   gameId: string
 
   @PrismaRelation(() => Challenge)
+  @Field(() => Challenge)
+  @ResolveIfMissing('challenge', 'challengeId')
   challenge: Challenge
   challengeId: string
 

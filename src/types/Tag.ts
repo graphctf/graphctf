@@ -5,6 +5,7 @@ import { RequireMemberOfGame } from '~/context';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Challenge } from './Challenge';
+import { ResolveIfMissing } from '../middleware';
 
 @ObjectType()
 export class Tag extends FromPrisma<PrismaTag> implements PrismaTag {
@@ -24,20 +25,13 @@ export class Tag extends FromPrisma<PrismaTag> implements PrismaTag {
 
   // Relations
   @PrismaRelation(() => Game)
+  @Field(() => Game)
+  @ResolveIfMissing('game', 'gameId')
   game: Game
   gameId: string
 
   @PrismaRelation(() => [Challenge])
-  challenges: Challenge[]
-
   @Field(() => [Challenge])
-  @RequireMemberOfGame()
-  async fetchChallenges(): Promise<Challenge[]> {
-    if (!this.challenges) {
-      this.challenges = Challenge.FromArray(
-        await Container.get(PrismaClient).challenge.findMany({ where: { game: { id: this.id } } })
-      );
-    }
-    return this.challenges;
-  }
+  @ResolveIfMissing('challenge', { many(self) { return { where: { tags: { some: { id: self.id } } } } } })
+  challenges: Challenge[]
 }

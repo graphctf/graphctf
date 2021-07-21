@@ -1,7 +1,8 @@
-import { Challenge, Attempt } from '@prisma/client';
+import { Container } from 'typedi';
+import { PrismaClient, Challenge, Attempt } from '@prisma/client';
 import { ChallengeScoringType } from '~/enums';
 
-export function scoreChallenge(challenge: Challenge & { attempts: Attempt[] }): number {
+export async function scoreChallenge(challenge: Challenge): Promise<number> {
   if (challenge.scoring === ChallengeScoringType.STATIC) return challenge.points;
 
   if (!challenge.pointsEnd) throw Error('Missing scoring end points.');
@@ -22,8 +23,16 @@ export function scoreChallenge(challenge: Challenge & { attempts: Attempt[] }): 
 
   if (challenge.scoring === ChallengeScoringType.CHANGE_WITH_SOLVES) {
     if (!challenge.pointsEndSolveCount) throw Error('Missing solve-based scoring information.');
-    const solves = challenge.attempts.filter(a => a.correct).length;
-    const percentToFinal = Math.min(1, solves/challenge.pointsEndSolveCount);
+    const solves = await Container.get(PrismaClient).attempt.aggregate({
+      _count: { id: true },
+      where: {
+        challengeId: challenge.id,
+        correct: true,
+      },
+    });
+    const solvesCount = solves._count.id || 0;
+
+    const percentToFinal = Math.min(1, solvesCount/challenge.pointsEndSolveCount);
     return challenge.points + (pointDelta * percentToFinal);
   }
 

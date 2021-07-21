@@ -1,12 +1,13 @@
 import {
-  Resolver, Authorized, Query, Mutation, Arg, Ctx, PubSub, Publisher
+  Resolver, Query, Mutation, Arg, Ctx, PubSub, Publisher
 } from 'type-graphql';
 import { PrismaClient } from '@prisma/client';
 import { Inject, Service } from 'typedi';
-import { Challenge, Game } from '~/types';
+import { Game } from '~/types';
 import { CreateGameInput, EditGameInput, FindOneIdInput } from '~/inputs';
-import { Context, AuthRequirement, RequireMemberOfGame } from '~/context';
-import { GameTopics, GameTopicPayload } from '~/subscriptions';
+import { Context } from '~/context';
+import { RequireAdmin } from '~/middleware';
+import { GameUpdateTopic, GameUpdatePayload } from '~/subscriptions';
 
 @Service()
 @Resolver(Game)
@@ -14,8 +15,8 @@ export class AdminGameResolver {
   @Inject(() => PrismaClient)
   private readonly prisma : PrismaClient;
 
-  @Authorized()
   @Query(() => [Game])
+  @RequireAdmin()
   async games(
     @Ctx() context: Context,
   ): Promise<Game[]> {
@@ -26,42 +27,22 @@ export class AdminGameResolver {
     }));
   }
 
-  @Authorized()
-  @RequireMemberOfGame('where')
-  @Query(() => Game, { nullable: true })
-  async game(
-    @Ctx() context: Context,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
-  ): Promise<Game | null> {
-    if (!context.auth.isAdmin && context.auth.gameId !== where.id) return null;
-
-    return new Game(await this.prisma.game.findUnique({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      where,
-      include: Game.getDefaultInclude(context),
-    }));
-  }
-
-  // Mutations
-
-  @Authorized(AuthRequirement.ADMIN)
   @Mutation(() => Game)
+  @RequireAdmin()
   async createGame(
-    @PubSub(GameTopics.GAME) publish: Publisher<GameTopicPayload>,
     @Arg('data', () => CreateGameInput) data: CreateGameInput,
   ): Promise<Game> {
     const game = await this.prisma.game.create({
       data,
     });
-    publish({ game: { id: game.id } });
     return new Game(game);
   }
 
-  @Authorized(AuthRequirement.ADMIN)
   @Mutation(() => Game)
+  @RequireAdmin()
   async editGame(
     @Ctx() context: Context,
-    @PubSub(GameTopics.GAME) publish: Publisher<GameTopicPayload>,
+    @PubSub(GameUpdateTopic) publish: Publisher<GameUpdatePayload>,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
     @Arg('data', () => EditGameInput) data: EditGameInput,
   ): Promise<Game> {
@@ -70,15 +51,19 @@ export class AdminGameResolver {
       data,
       include: Game.getDefaultInclude(context),
     });
-    publish({ game: { id: game.id } });
+    publish(game);
     return new Game(game);
   }
 
-  @Authorized(AuthRequirement.ADMIN)
   @Mutation(() => Boolean)
+  @RequireAdmin()
   async deleteGame(
+    @PubSub(GameUpdateTopic) publish: Publisher<GameUpdatePayload>,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
   ): Promise<boolean> {
+    const game = await this.prisma.game.findUnique({ where });
+    if (!game) throw Error('Game not found.');
+    
     await Promise.all([
       this.prisma.attempt.deleteMany({ where: { game: where } }),
       this.prisma.hintReveal.deleteMany({ where: { game: where } }),
@@ -96,6 +81,7 @@ export class AdminGameResolver {
     await this.prisma.team.deleteMany({ where: { game: where } });
     await this.prisma.game.delete({ where });
 
+    publish({ ...game, __deleted: true });
     return true;
   }
 }

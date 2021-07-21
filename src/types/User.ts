@@ -6,8 +6,8 @@ import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Team } from './Team';
 import { Attempt } from './Attempt';
-
-const prisma = Container.get(PrismaClient);
+import { ResolveIfMissing } from '../middleware';
+import { RequireSelf } from '../middleware/RequireSelf';
 
 @ObjectType()
 export class User extends FromPrisma<PrismaUser> implements PrismaUser {
@@ -34,21 +34,15 @@ export class User extends FromPrisma<PrismaUser> implements PrismaUser {
   gameId: string
 
   @PrismaRelation(() => Team)
+  @Field(() => Team)
+  @ResolveIfMissing('team', 'teamId')
   team: Team
   teamId: string
 
-  @Field(() => Team, { name: 'team' })
-  async fetchTeam(): Promise<Team> {
-    if (!this.team) {
-      this.team = new Team(
-        await Container.get(PrismaClient).team.findUnique({ where: { id: this.teamId } }),
-      );
-    }
-    return this.team;
-  }
-
-
   @PrismaRelation(() => [Attempt])
+  @Field(() => Attempt)
+  @RequireSelf()
+  @ResolveIfMissing('attempt', ['userId'])
   attempts: Attempt[]
 
   hintReveals: HintReveal[]
@@ -61,6 +55,7 @@ export class User extends FromPrisma<PrismaUser> implements PrismaUser {
    * Deletes all the user's solves and hints, and unwinds their point impact.
    */
   async resetProgress(): Promise<void> {
+    const prisma = Container.get(PrismaClient);
     const where = { user: { id: this.id }, team: { id: this.teamId } };
     // eslint-disable-next-line no-underscore-dangle
     const previousPoints = (await prisma.attempt.aggregate({ _sum: { pointsEarned: true }, where }))
@@ -86,7 +81,7 @@ export class User extends FromPrisma<PrismaUser> implements PrismaUser {
     gameId: string,
     include?: Prisma.UserInclude | undefined,
   ): Promise<User | null> {
-    return new User(await prisma.user.findUnique({
+    return new User(await Container.get(PrismaClient).user.findUnique({
       where: { username_gameId: { username, gameId } },
       include: include || {
         game: true,

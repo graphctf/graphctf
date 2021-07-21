@@ -1,43 +1,66 @@
 import { Resolver, Subscription, Arg, Root, Ctx, Mutation, PubSub, Publisher } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { Context, RequireUser } from '~/context';
-import { Challenge } from '~/types';
-import {
-  GameTopics,
-  GameTopicPayload,
-  filterGame as filter,
-  AttemptTopics,
-  AttemptTopicPayload
-} from '~/subscriptions';
+import { Context } from '~/context';
+import { RequireUser } from '~/middleware';
+import { Challenge, Attempt, Scoreboard, Game } from '~/types';
 import { FindOneIdInput } from '~/inputs';
-import { checkSolution, scoreChallenge } from '~/utils';
-
-// Hint
-// Solution
-// Hint Reveal
+import { calculatePenalty, checkSolution, scoreChallenge } from '~/utils';
+import {
+  GameChallengeUpdateTopic,
+  GameChallengeUpdatePayload,
+  TeamChallengeAttemptTopic,
+  TeamChallengeAttemptPayload,
+  AdminAttemptSubmitTopic,
+  AdminAttemptSubmitPayload,
+  GameScoreUpdateTopic,
+  GameScoreUpdatePayload,
+  filterGame,
+  filterTeam,
+  TeamChallengeAttemptReviewPayload,
+} from '~/subscriptions';
 
 @Service()
 @Resolver(() => Challenge)
 export class ParticipantChallengeResolver {
   @Inject(() => PrismaClient)
-  private readonly prisma : PrismaClient;
-  @Subscription(() => [Challenge], { name: 'challenges', topics: GameTopics.CHALLENGES, filter })
+  private readonly prisma: PrismaClient;
+
+  @Subscription(() => Challenge, { name: 'challenges', topics: GameChallengeUpdateTopic, filter: filterGame })
   async challengesSubscription(
-    @Root() { _del }: GameTopicPayload,
+    @Root() payload: GameChallengeUpdatePayload,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
-  ): Promise<Challenge[]> {
-    if (_del) return [];
-    return Challenge.FromArray(
-      await this.prisma.challenge.findMany({ where: { game: where } })
-    );
+  ): Promise<Challenge> {
+    return new Challenge(payload);
+  }
+
+  @Subscription(() => Challenge, { name: 'challengeAttempts', topics: TeamChallengeAttemptTopic, filter: filterTeam })
+  async challengeAttemptsSubscription(
+    @Root() payload: TeamChallengeAttemptPayload,
+    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+  ): Promise<Attempt> {
+    return new Attempt(payload);
+  }
+
+  @Subscription(() => Challenge, {
+    name: 'challengeAttemptReviews',
+    topics: AdminAttemptSubmitTopic,
+    filter: filterTeam,
+  })
+  async challengeAttemptReviewsSubscription(
+    @Root() payload:TeamChallengeAttemptReviewPayload,
+    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+  ): Promise<Attempt> {
+    return new Attempt(payload);
   }
 
   @Mutation(() => Boolean, { nullable: true })
   @RequireUser()
-  async submitFlag(
+  async attemptChallenge(
+    @PubSub(TeamChallengeAttemptTopic) publishChallengeAttempt: Publisher<TeamChallengeAttemptPayload>,
+    @PubSub(AdminAttemptSubmitTopic) publishAdminAttempt: Publisher<AdminAttemptSubmitPayload>,
+    @PubSub(GameScoreUpdateTopic) publishScoreUpdate: Publisher<GameScoreUpdatePayload>,
     @Ctx() { auth }: Context,
-    @PubSub(AttemptTopics.SUBMIT) publishAttemptSubmission: Publisher<AttemptTopicPayload>,
     @Arg('challenge', () => FindOneIdInput) challengeWhere: FindOneIdInput,
     @Arg('flag', () => String) flag: string,
   ): Promise<boolean | null> {
@@ -45,7 +68,12 @@ export class ParticipantChallengeResolver {
     const challenge = await this.prisma.challenge.findUnique({
       where: challengeWhere,
       include: {
-        attempts: { where: { correct: true } },
+        attempts: {
+          where: {
+            teamId: auth.teamId!,
+            OR: [{ correct: true }, { reviewRequired: true, reviewCompleted: false }]
+          }
+        },
         solutions: true,
       },
     });
@@ -59,11 +87,14 @@ export class ParticipantChallengeResolver {
 
     // Validate whether the challenge can be attempted.
     if (!challenge || challenge.gameId !== auth.gameId) throw Error('Challenge does not exist.');
-    if (challenge.allowsMultiUserSolves && challenge.attempts.filter(a => a.userId === auth.userId)) {
+    if (challenge.allowsMultiUserSolves && challenge.attempts.filter(a => a.userId === auth.userId && a.correct)) {
       throw Error('You have already solved this challenge.');
     }
-    if (challenge.attempts.filter(a => a.teamId === auth.teamId)) {
+    if (challenge.attempts.filter(a => a.teamId === auth.teamId && a.correct)) {
       throw Error('Your team has already solved this challenge.');
+    }
+    if (challenge.attempts.filter(a => a.teamId === auth.teamId && a.reviewRequired && !a.reviewCompleted)) {
+      throw Error('Your team already has a pending submission for this challenge.');
     }
     if (
       (challenge.startsAt && challenge.startsAt.getTime() > now.getTime())
@@ -81,27 +112,39 @@ export class ParticipantChallengeResolver {
           reviewRequired: true,
           reviewCompleted: false,
           ...attemptData,
-        }
+        },
+        include: { challenge: true, team: true },
       });
-      publishAttemptSubmission({
-        game: { id: challenge.gameId },
-        challenge: { id: challenge.id },
-        attempt: { id: attempt.id },
-      });
+      publishChallengeAttempt(attempt);
+      publishAdminAttempt(attempt);
       return null;
     }
 
     // Score the challenge
     const correct = challenge.solutions
       .reduce((accum: boolean, s): boolean => accum || checkSolution(s, flag), false);
-    const pointsEarned = correct ? scoreChallenge(challenge) : 0;
-    await this.prisma.attempt.create({
+    const pointsEarned = correct
+      ? Math.max(0, (await scoreChallenge(challenge)) - (await calculatePenalty(challenge.id, auth.teamId!)))
+      : 0;
+    if (pointsEarned > 0) {
+      await this.prisma.$executeRaw`update Team set points = points + ${pointsEarned} where id = ${auth.teamId!}`;
+    }
+    const attempt = await this.prisma.attempt.create({
       data: {
         correct,
         pointsEarned,
         ...attemptData,
-      }
+      },
+      include: { challenge: true, team: true, game: true },
     });
+    publishChallengeAttempt(attempt);
+    if (pointsEarned > 0) {
+      const scoreboard = new Scoreboard();
+      scoreboard.game = new Game(attempt.game);
+      scoreboard.gameId = attempt.gameId;
+      await scoreboard.fetchScores();
+      publishScoreUpdate(scoreboard);
+    }
     return correct;
   }
 }

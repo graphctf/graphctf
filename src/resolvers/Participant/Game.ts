@@ -1,10 +1,17 @@
 import { Resolver, Query, Subscription, Arg, Ctx, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Game, Team, ScoreboardEntry } from '~/types';
-import { GameTopics, GameTopicPayload, filterGame as filter } from '~/subscriptions';
+import { Game, Team, Scoreboard } from '~/types';
 import { FindOneIdInput } from '~/inputs';
-import { Context, RequireUserOrArg, ForbidUserArg } from '~/context';
+import { Context } from '~/context';
+import {
+  GameUpdateTopic,
+  GameUpdatePayload,
+  GameScoreUpdateTopic,
+  GameScoreUpdatePayload,
+  filterGame
+} from '~/subscriptions';
+import { RequireUserOrArg, AdminOnlyArg } from '~/middleware';
 
 @Service()
 @Resolver(() => Game)
@@ -14,7 +21,7 @@ export class ParticipantGameResolver {
 
   @Query(() => Game, { nullable: true })
   @RequireUserOrArg('where')
-  @ForbidUserArg('where')
+  @AdminOnlyArg('where')
   async game(
     @Ctx() { auth }: Context,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
@@ -26,64 +33,40 @@ export class ParticipantGameResolver {
     return new Game(game);
   }
 
-  @Subscription(() => Game, { name: 'game', topics: GameTopics.GAME, filter, nullable: true })
+  @Subscription(() => Game, { name: 'game', topics: GameUpdateTopic, filter: filterGame })
   @RequireUserOrArg('where')
-  @ForbidUserArg('where')
+  @AdminOnlyArg('where')
   async gameSubscription(
-    @Root() { _del }: GameTopicPayload,
+    @Root() payload: GameUpdatePayload,
     @Ctx() ctx: Context,
     @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
   ): Promise<Game | null> {
-    if (_del) return null;
-    return this.game(ctx, where);
+    return new Game(payload);
   }
 
-  @Query(() => [ScoreboardEntry])
+  @Query(() => Scoreboard)
   @RequireUserOrArg('where')
-  @ForbidUserArg('where')
+  @AdminOnlyArg('where')
   async scores(
     @Ctx() { auth }: Context,
     @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
-  ): Promise<ScoreboardEntry[]> {
-    const teams = Team.FromArray(
-      await this.prisma.team.findMany({
-        where: { game: auth.isAdmin ? where : { id: auth.gameId! }, points: { gt: 0 } },
-        orderBy: { points: 'desc' },
-        include: {
-          attempts: {
-            where: { correct: true },
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
-        },
-      })
-    );
-    return teams
-      .sort((a, b) => {
-        // By default sort by highest points
-        if (a.points !== b.points) return a.points > b.points ? -1 : 1;
-        // This shouldn't ever happen, because you have to have a solution to have points:
-        if (!a.attempts || !b.attempts) return 0;
-        // If two teams have the same points, sort whoever got there first higher
-        return a.attempts[0].createdAt.getTime() < b.attempts[0].createdAt.getTime() ? -1 : 1;
-      })
-      .map((team) => { team.attempts = null; return team; }) // Remove attempts so it loads all of them later
-      .map((team, ranking) => ({
-        ranking,
-        team,
-        teamId: team.id,
-      }));
+  ): Promise<Scoreboard> {
+    const game = await this.prisma.game.findUnique({ where: where || { id: auth.gameId! } });
+    if (!game) throw Error('Game not found.');
+    const scoreboard = new Scoreboard();
+    scoreboard.gameId = game.id;
+    scoreboard.game = new Game(game);
+    return scoreboard;
   }
 
-  @Subscription(() => [ScoreboardEntry], { name: 'scores', topics: GameTopics.SCORES, filter })
+  @Subscription(() => Scoreboard, { name: 'scores', topics: GameScoreUpdateTopic, filter: filterGame })
   @RequireUserOrArg('where')
-  @ForbidUserArg('where')
+  @AdminOnlyArg('where')
   async scoresSubscription(
-    @Root() { _del }: GameTopicPayload,
+    @Root() scoreboard: GameScoreUpdatePayload,
     @Ctx() ctx: Context,
     @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
-  ): Promise<ScoreboardEntry[]> {
-    if (_del) return [];
-    return this.scores(ctx, where);
+  ): Promise<Scoreboard> {
+    return scoreboard;
   }
 }

@@ -7,6 +7,7 @@ export * from './FromPrisma';
 export * from './Game';
 export * from './Hint';
 export * from './Message';
+export * from './Scoreboard';
 export * from './ScoreboardEntry';
 export * from './Solution';
 export * from './Tag';

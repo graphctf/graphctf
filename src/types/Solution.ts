@@ -4,6 +4,7 @@ import { SolutionType } from '../enums';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { Challenge } from './Challenge';
+import { ResolveIfMissing } from '../middleware';
 
 @ObjectType()
 export class Solution extends FromPrisma<PrismaSolution> implements PrismaSolution {
@@ -26,10 +27,14 @@ export class Solution extends FromPrisma<PrismaSolution> implements PrismaSoluti
 
   // Relations
   @PrismaRelation(() => Game)
+  @Field(() => Game)
+  @ResolveIfMissing('game', 'gameId')
   game: Game
   gameId: string
 
   @PrismaRelation(() => Challenge)
+  @Field(() => Challenge)
+  @ResolveIfMissing('challenge', 'challengeId')
   challenge: Challenge
   challengeId: string
 }

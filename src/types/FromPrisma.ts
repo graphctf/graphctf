@@ -1,4 +1,7 @@
 import 'reflect-metadata';
+import { Field } from 'type-graphql';
+
+// TODO(@tylermenezes): We can replace this using class-transformer
 
 const prismaRelationMetadataKey = Symbol('prismaRelation');
 
@@ -31,4 +34,7 @@ export abstract class FromPrisma<T> {
   static FromArray<T, D extends FromPrisma<T>>(this: StaticThis<T, D>, data: Array<T>): Array<D> {
     return data.map((el) => new this(el));
   }
+
+  @Field(() => Boolean)
+  __deleted: boolean = false;
 }

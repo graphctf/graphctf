@@ -13,6 +13,7 @@ import { Tag } from './Tag';
 import { Solution } from './Solution';
 import { FindOneIdInput } from '~/inputs';
 import Container from 'typedi';
+import { Scoreboard } from './Scoreboard';
 
 @ObjectType()
 export class Game extends FromPrisma<PrismaGame> implements PrismaGame {
@@ -95,8 +96,21 @@ export class Game extends FromPrisma<PrismaGame> implements PrismaGame {
   @PrismaRelation(() => [Solution])
   solutions: Solution[]
 
-  static getDefaultInclude({ auth }: Context): Prisma.GameInclude {
-    if (auth.isAdmin) {
+  scoreboard?: Scoreboard
+
+  @Field(() => Scoreboard, { name: 'scoreboard' })
+  async fetchScoreboard() {
+    if (!this.scoreboard) {
+      this.scoreboard = new Scoreboard();
+      this.scoreboard.gameId = this.id;
+      this.scoreboard.game = this;
+    }
+
+    return this.scoreboard;
+  }
+
+  static getDefaultInclude(context?: Context): Prisma.GameInclude {
+    if (context?.auth.isAdmin) {
       return {
         users: true,
         teams: true,
@@ -109,8 +123,8 @@ export class Game extends FromPrisma<PrismaGame> implements PrismaGame {
       };
     }
 
-    const showOnlyGame = auth.isUser ? { where: { game: { id: auth.gameId! } } } : false;
-    const showOnlyTeam = auth.isUser ? { where: { team: { id: auth.teamId! } } } : false;
+    const showOnlyGame = context?.auth.isUser ? { where: { game: { id: context.auth.gameId! } } } : false;
+    const showOnlyTeam = context?.auth.isUser ? { where: { team: { id: context.auth.teamId! } } } : false;
 
     return {
       users: showOnlyGame,

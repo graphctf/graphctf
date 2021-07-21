@@ -1,5 +1,6 @@
 import { Message as PrismaMessage } from '@prisma/client';
 import { ObjectType, Field } from 'type-graphql';
+import { ResolveIfMissing } from '../middleware';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 
@@ -25,7 +26,7 @@ export class Message extends FromPrisma<PrismaMessage> implements PrismaMessage 
   // Relations
   @PrismaRelation(() => Game)
   @Field(() => Game)
+  @ResolveIfMissing('game', 'gameId')
   game: Game
-
   gameId: string
 }

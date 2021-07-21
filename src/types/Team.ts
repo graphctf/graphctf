@@ -1,11 +1,11 @@
-import { HintReveal, PrismaClient, Team as PrismaTeam } from '@prisma/client';
+import { HintReveal, Team as PrismaTeam } from '@prisma/client';
 import { ObjectType, Field, Authorized } from 'type-graphql';
-import { Container } from 'typedi';
-import { AuthRequirement, RequireCaptainOfTeam, RequireMemberOfGame, RequireMemberOfTeam } from '~/context';
+import { RequireCaptainOfTeam, RequireMemberOfTeam } from '~/middleware';
 import { FromPrisma, PrismaRelation } from './FromPrisma';
 import { Game } from './Game';
 import { User } from './User';
 import { Attempt } from './Attempt';
+import { ResolveIfMissing } from '../middleware';
 
 @ObjectType()
 export class Team extends FromPrisma<PrismaTeam> implements PrismaTeam {
@@ -35,31 +35,20 @@ export class Team extends FromPrisma<PrismaTeam> implements PrismaTeam {
 
   // Relations
   @PrismaRelation(() => Game)
+  @Field(() => Game)
+  @ResolveIfMissing('game', 'gameId')
   game: Game | null
   gameId: string
 
-  @Field(() => Game, { name: 'game' })
-  async fetchGame(): Promise<Game> {
-    if (!this.game) {
-      this.game = new Game(await Container.get(PrismaClient).game.findUnique({ where: { id: this.gameId } }));
-    }
-    return this.game;
-  }
-
   @PrismaRelation(() => [User])
+  @Field(() => [User])
+  @ResolveIfMissing('user', ['teamId'])
   users: User[] | null
 
-  @Field(() => [User], { name: 'users' })
-  async fetchUsers(): Promise<User[]> {
-    if (this.users === null) {
-      this.users = User.FromArray(await Container.get(PrismaClient).user.findMany({
-        where: { teamId: this.id },
-      }));
-    }
-    return this.users;
-  }
-
   @PrismaRelation(() => [Attempt])
+  @Field(() => [Attempt])
+  @RequireMemberOfTeam()
+  @ResolveIfMissing('attempt', ['teamId'])
   attempts: Attempt[] | null
 
   hintReveals: HintReveal[] | null

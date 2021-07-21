@@ -19,6 +19,7 @@
     "@types/ioredis": "^4.26.6",
     "apollo-server": "^2.24.1",
     "apollo-server-express": "^2.24.1",
+    "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
     "debug": "^4.3.2",
     "dotenv": "^9.0.2",

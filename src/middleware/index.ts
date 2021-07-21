@@ -8,6 +8,7 @@ export * from './RequireAdmin';
 export * from './RequireCaptainOfTeam';
 export * from './RequireMemberOfGame';
 export * from './RequireMemberOfTeam';
+export * from './RequireSelf';
 export * from './RequireUser';
 export * from './RequireUserOrArg';
 export * from './ResolveIfMissing';
