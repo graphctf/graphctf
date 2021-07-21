@@ -2,7 +2,7 @@ import { Resolver, Subscription, Arg, Root, Ctx, Mutation, PubSub, Publisher } f
 import { Inject, Service } from 'typedi';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { Context } from '~/context';
-import { RequireUser } from '~/middleware';
+import { AdminOnlyArg, RequireUser, RequireUserOrArg } from '~/middleware';
 import { Challenge, Attempt, Scoreboard, Game } from '~/types';
 import { FindOneIdInput } from '~/inputs';
 import { calculatePenalty, checkSolution, scoreChallenge } from '~/utils';
@@ -27,17 +27,21 @@ export class ParticipantChallengeResolver {
   private readonly prisma: PrismaClient;
 
   @Subscription(() => Challenge, { name: 'challenges', topics: GameChallengeUpdateTopic, filter: filterGame })
+  @RequireUserOrArg('where')
+  @AdminOnlyArg('where')
   async challengesSubscription(
     @Root() payload: GameChallengeUpdatePayload,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<Challenge> {
     return new Challenge(payload);
   }
 
   @Subscription(() => Challenge, { name: 'challengeAttempts', topics: TeamChallengeAttemptTopic, filter: filterTeam })
+  @RequireUserOrArg('where')
+  @AdminOnlyArg('where')
   async challengeAttemptsSubscription(
     @Root() payload: TeamChallengeAttemptPayload,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<Attempt> {
     return new Attempt(payload);
   }
@@ -47,9 +51,11 @@ export class ParticipantChallengeResolver {
     topics: AdminAttemptSubmitTopic,
     filter: filterTeam,
   })
+  @RequireUserOrArg('where')
+  @AdminOnlyArg('where')
   async challengeAttemptReviewsSubscription(
     @Root() payload:TeamChallengeAttemptReviewPayload,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<Attempt> {
     return new Attempt(payload);
   }
@@ -62,7 +68,7 @@ export class ParticipantChallengeResolver {
     @PubSub(GameScoreUpdateTopic) publishScoreUpdate: Publisher<GameScoreUpdatePayload>,
     @Ctx() { auth }: Context,
     @Arg('challenge', () => FindOneIdInput) challengeWhere: FindOneIdInput,
-    @Arg('flag', () => String) flag: string,
+    @Arg('solution', () => String) flag: string,
   ): Promise<boolean | null> {
     const now = new Date();
     const challenge = await this.prisma.challenge.findUnique({

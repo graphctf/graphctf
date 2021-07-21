@@ -24,7 +24,7 @@ export class ParticipantGameResolver {
   @AdminOnlyArg('where')
   async game(
     @Ctx() { auth }: Context,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<Game | null> {
     const game = await this.prisma.game.findFirst({
       where: auth.isAdmin ? where : { id: auth.gameId! },
@@ -38,15 +38,14 @@ export class ParticipantGameResolver {
   @AdminOnlyArg('where')
   async gameSubscription(
     @Root() payload: GameUpdatePayload,
-    @Ctx() ctx: Context,
-    @Arg('where', () => FindOneIdInput) where: FindOneIdInput,
+    @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
   ): Promise<Game | null> {
     return new Game(payload);
   }
 
+  @Query(() => Scoreboard)
   @RequireUserOrArg('where')
   @AdminOnlyArg('where')
-  @Query(() => Scoreboard)
   async scores(
     @Ctx() { auth }: Context,
     @Arg('where', () => FindOneIdInput, { nullable: true }) where?: FindOneIdInput,
